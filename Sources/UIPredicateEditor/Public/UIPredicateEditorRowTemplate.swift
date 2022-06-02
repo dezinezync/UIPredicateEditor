@@ -265,20 +265,132 @@ open class UIPredicateEditorRowTemplate: NSObject {
   
   // MARK: - Internal
   public func updatePredicate() {
-    // update the predicate
-    // @TODO: Implementation pending
-    /*
-    var comparisonPredicate = NSComparisonPredicate(
-      leftExpression: <#T##NSExpression#>,
-      rightExpression: <#T##NSExpression#>,
-      modifier: <#T##NSComparisonPredicate.Modifier#>,
-      type: <#T##NSComparisonPredicate.Operator#>,
-      options: <#T##NSComparisonPredicate.Options#>
-    )
-    */
+    defer {
+      // refresh views
+      refreshDelegate?.refreshContentView()
+    }
     
-    // refresh views
-    refreshDelegate?.refreshContentView()
+    if !self.compoundTypes.isEmpty {
+      if #available(iOS 14, macCatalyst 11.0, *) {
+        if let selected = self.compoundTypesButton.menu?.uiSelectedElements.first as? UIAction {
+          if selected.title == NSCompoundPredicate.LogicalType.and.localizedTitle {
+            self.predicate = NSPredicate(format: "AND")
+          }
+          else if selected.title == NSCompoundPredicate.LogicalType.or.localizedTitle {
+            self.predicate = NSPredicate(format: "OR")
+          }
+          else if selected.title == NSCompoundPredicate.LogicalType.and.localizedTitle {
+            self.predicate = NSPredicate(format: "NOT")
+          }
+        }
+      }
+      
+      return
+    }
+    
+    // update the predicate
+    var leftExpression: NSExpression?
+    var predicateOperator: NSComparisonPredicate.Operator = .equalTo
+    var rightExpression: NSExpression?
+    
+    let views = templateViews
+    let leftExpressionView = views[0]
+    
+    if #available(iOS 14, macCatalyst 11.0, *) {
+      if let button = leftExpressionView as? UIButton,
+         let item = button.menu?.uiSelectedElements.first as? UIAction {
+        let title = item.title
+        let matchingExpression = leftExpressions.first { expression in
+          switch expression.expressionType {
+          case .constantValue:
+            let value = expression.constantValue
+            if let stringValue = value as? String,
+               title == stringValue {
+              return true
+            }
+            
+            let description = String(describing: value)
+            if title == description {
+              return true
+            }
+            
+            return false
+            
+          case .keyPath:
+            return expression.keyPath == title
+          default:
+            // TODO: Implement other types
+            return false
+          }
+        }
+        
+        leftExpression = matchingExpression
+      }
+      
+      let operatorView = views[1]
+      
+      if let operatorButton = operatorView as? UIButton,
+         let item = operatorButton.menu?.uiSelectedElements.first as? UIAction {
+        predicateOperator = NSComparisonPredicate.Operator.from(item.title)
+      }
+      
+      if views.count > 2 {
+        let rightExpressionView = views[2]
+        
+        if let rightExpressionView = rightExpressionView as? UIButton,
+           let item = rightExpressionView.menu?.uiSelectedElements.first as? UIAction {
+          let title = item.title
+          rightExpression = NSExpression(forConstantValue: title)
+        }
+        else if let textField = rightExpressionView as? UITextField {
+          
+          if textField.keyboardType == .URL,
+          let url = URL(string: textField.text ?? "") {
+            rightExpression = NSExpression(forConstantValue: url)
+          }
+          else if textField.keyboardType == .numbersAndPunctuation {
+            var text = (textField.text ?? "") as NSString
+            
+            if rightExpressionAttributeType == .doubleAttributeType {
+              rightExpression = NSExpression(forConstantValue: text.doubleValue)
+            }
+            else if rightExpressionAttributeType == .floatAttributeType {
+              rightExpression = NSExpression(forConstantValue: text.floatValue)
+            }
+            else if rightExpressionAttributeType == .integer16AttributeType || rightExpressionAttributeType == .integer32AttributeType {
+              rightExpression = NSExpression(forConstantValue: text.intValue)
+            }
+            else if rightExpressionAttributeType == .integer64AttributeType {
+              rightExpression = NSExpression(forConstantValue: text.integerValue)
+            }
+            /*
+             * Use the following template to handle additional cases
+             else if rightExpressionAttributeType == <#type#> {
+               rightExpression = NSExpression(forConstantValue: text.<#valueType#>)
+             }
+             */
+          }
+        }
+        else if let dateView = rightExpressionView as? UIDatePicker {
+          rightExpression = NSExpression(forConstantValue: dateView.date)
+        }
+      }
+    }
+    
+    guard let leftExpression = leftExpression,
+          let rightExpression = rightExpression else {
+      return
+    }
+    
+    let comparisonPredicate = NSComparisonPredicate(
+      leftExpression: leftExpression,
+      rightExpression: rightExpression,
+      modifier: modifier,
+      type: predicateOperator,
+      options: options
+    )
+    
+    self.predicate = comparisonPredicate
   }
   
   // MARK: Views
@@ -398,6 +510,8 @@ open class UIPredicateEditorRowTemplate: NSObject {
         #if DEBUG
         print("[UIPredicateEditor] compound type menu action: \(type.localizedTitle)")
         #endif
+        
+        self?.updatePredicate()
       }
     }
     
@@ -424,6 +538,8 @@ open class UIPredicateEditorRowTemplate: NSObject {
       textField.placeholder = "Value"
     }
     
+    textField.delegate = self
+    
     textField.sizeToFit()
     
     return textField
@@ -437,10 +553,16 @@ open class UIPredicateEditorRowTemplate: NSObject {
       datePicker.preferredDatePickerStyle = .inline
     }
     
+    datePicker.addTarget(self, action: #selector(didChangeDate(_:)), for: .valueChanged)
+    
     datePicker.sizeToFit()
     
     return datePicker
   }()
+  
+  @objc func didChangeDate(_ sender: Any?) {
+    updatePredicate()
+  }
 }
 
 // MARK: - Copying
@@ -448,6 +570,18 @@ open class UIPredicateEditorRowTemplate: NSObject {
 extension UIPredicateEditorRowTemplate: NSCopying {
   open func copy(with zone: NSZone? = nil) -> Any {
     UIPredicateEditorRowTemplate(from: self)
+  }
+}
+
+// MARK: - UITextFieldDelegate
+extension UIPredicateEditorRowTemplate: UITextFieldDelegate {
+  public func textFieldDidEndEditing(_ textField: UITextField) {
+    updatePredicate()
+  }
+  
+  public func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+    textField.resignFirstResponder()
+    return true
   }
 }
 
@@ -459,5 +593,29 @@ extension UIPredicateEditorRowTemplate {
     let meta = ", predicate: \(self.predicate?.predicateFormat ?? "no predicate"), view count: \(templateViews.count)"
     
     return inherit + meta
+  }
+}
+
+// MARK: - Internal Extensions
+extension UIMenu {
+  var uiSelectedElements: [UIMenuElement] {
+    if #available(iOS 15, macCatalyst 12.0, *) {
+      return selectedElements
+    }
+    else {
+      return children.filter { element in
+        if let element = element as? UIMenu {
+          return !element.uiSelectedElements.isEmpty
+        }
+        
+        return (element as! UIAction).state == .on
+      }.map { element in
+        if let element = element as? UIMenu {
+          return element.uiSelectedElements
+        }
+        
+        return [element]
+      }.reduce([], +)
+    }
   }
 }
