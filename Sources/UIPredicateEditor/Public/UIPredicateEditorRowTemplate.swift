@@ -38,6 +38,14 @@ open class UIPredicateEditorRowTemplate: NSObject {
   
   public let compoundTypes: [NSCompoundPredicate.LogicalType]
   
+  /// delegate which is notified when the predicate or any of the view's value change.
+  public weak var refreshDelegate: UIPredicateEditorContentRefreshing?
+  
+  /// The predicate managed by this template.
+  ///
+  /// Only setup on copies of templates currently managed by the `UIPredicateEditor`.
+  internal var predicate: NSPredicate?
+  
   /// Initializes and returns a “pop-up-pop-up-pop-up”–style row template.
   /// - Parameters:
   ///   - leftExpressions: An array of ``NSExpression`` objects that represent the left side of a predicate.
@@ -55,6 +63,7 @@ open class UIPredicateEditorRowTemplate: NSObject {
     
     self.logicalType = .and
     self.rightExpressionAttributeType = nil
+    super.init()
   }
   
   #if canImport(CoreData)
@@ -79,6 +88,7 @@ open class UIPredicateEditorRowTemplate: NSObject {
     self.compoundTypes = []
     
     self.logicalType = .and
+    super.init()
   }
   #endif
   
@@ -94,6 +104,19 @@ open class UIPredicateEditorRowTemplate: NSObject {
     self.compoundTypes = compoundTypes
     
     self.rightExpressionAttributeType = nil
+    super.init()
+  }
+  
+  internal init(from reference: UIPredicateEditorRowTemplate) {
+    self.leftExpressions = reference.leftExpressions
+    self.rightExpressions = reference.rightExpressions
+    self.rightExpressionAttributeType = reference.rightExpressionAttributeType
+    self.modifier = reference.modifier
+    self.operators = reference.operators
+    self.options = reference.options
+    self.logicalType = reference.logicalType
+    self.compoundTypes = reference.compoundTypes
+    super.init()
   }
   
   // MARK: CoreData Support
@@ -120,14 +143,90 @@ open class UIPredicateEditorRowTemplate: NSObject {
   ///
   /// The highest match among all the templates determines which template is responsible for displaying the predicate. You can override this to determine which predicates your custom template handles.
   open func match(for predicate: NSPredicate) -> Double {
-    0.0
+    var score: Double = 0.0
+    
+    if let comparison = predicate as? NSComparisonPredicate {
+      if operators.contains(comparison.predicateOperatorType) {
+        score += 0.33
+      }
+      
+      if leftExpressions.contains(comparison.leftExpression) {
+        score += 0.33
+      }
+      
+      if rightExpressions.contains(comparison.rightExpression) {
+        score += 0.33
+      }
+      
+      if comparison.comparisonPredicateModifier == modifier {
+        score += 0.33
+      }
+      
+      score = min(1.0, score)
+    }
+    else if let compound = predicate as? NSCompoundPredicate {
+      // evaluate all subpredicates
+      let subpredicates = compound.subpredicates.compactMap { $0 as? NSPredicate }
+      let incrementCounter = 1.0 / Double(subpredicates.count)
+      
+      for subpredicate in subpredicates {
+        score += match(for: subpredicate) >= 0.5 ? incrementCounter : 0.0
+      }
+    }
+    else {
+      // standard predicate
+      // @TODO: Implement score evaluation for standard predicates
+      print(predicate.predicateFormat)
+    }
+    
+    return score
   }
   
   /// Returns the views that display this template’s predicate.
   ///
   /// The views for an `UIPredicateEditor` to display in a row that represents the predicate from `setPredicate(_:)`.
-  public var templateViews: [UIView] {
-    []
+  open var templateViews: [UIView] {
+    var views: [UIView] = []
+    
+    // check for any/all templates first
+    if !compoundTypes.isEmpty {
+      views.append(compoundTypesButton)
+      
+      let label = operatorStaticLabel
+      label.text = NSLocalizedString("of the following are true", comment: "of the following are true")
+      
+      views.append(label)
+    }
+    else {
+      if !leftExpressions.isEmpty {
+        views.append(leftExpressionPopupButton)
+      }
+      
+      if !operators.isEmpty {
+        views.append(operatorsPopupButton)
+      }
+      
+      if !rightExpressions.isEmpty {
+        views.append(rightExpressionPopupButton)
+      }
+      else {
+        if predicate is NSComparisonPredicate {
+          if rightExpressionAttributeType != nil {
+            if rightExpressionAttributeType == .dateAttributeType {
+              views.append(dateInputView)
+            }
+            else {
+              views.append(textInputView)
+            }
+          }
+          else {
+            fatalError("a comparison predicate without a right expression attribute type should have at least one right expression")
+          }
+        }
+      }
+    }
+    
+    return views
   }
   
   /// Sets the value of the views according to the given predicate.
@@ -138,7 +237,7 @@ open class UIPredicateEditorRowTemplate: NSObject {
   ///
   /// - Parameter predicate: The predicate value for the receiver.
   open func setPredicate(_ predicate: NSPredicate) {
-    
+    self.predicate = predicate
   }
   
   /// Returns the subpredicates that should be made sub-rows of a given predicate.
@@ -161,5 +260,204 @@ open class UIPredicateEditorRowTemplate: NSObject {
   /// - Returns: The predicate represented by the values of the template's views and the given subpredicates. You can override this method to return the predicate represented by your custom views.
   open func predicate(withSubpredicates subpredicates: [NSPredicate]?) -> NSPredicate {
     NSPredicate()
+  }
+
+  
+  // MARK: - Internal
+  public func updatePredicate() {
+    // update the predicate
+    // @TODO: Implementation pending
+    /*
+    var comparisonPredicate = NSComparisonPredicate(
+      leftExpression: <#T##NSExpression#>,
+      rightExpression: <#T##NSExpression#>,
+      modifier: <#T##NSComparisonPredicate.Modifier#>,
+      type: <#T##NSComparisonPredicate.Operator#>,
+      options: <#T##NSComparisonPredicate.Options#>
+    )
+    */
+    
+    // refresh views
+    refreshDelegate?.refreshContentView()
+  }
+  
+  // MARK: Views
+  func buttonWithMenu(_ actions: [UIMenuElement]) -> UIButton {
+    let button = UIButton(frame: .zero)
+    
+    if #available(iOS 14.0, *) {
+      button.menu = UIMenu(children: actions)
+      button.showsMenuAsPrimaryAction = true
+    }
+    else {
+      // fallback for older versions
+    }
+    
+    if #available(iOS 15, macCatalyst 12.0, *) {
+      button.changesSelectionAsPrimaryAction = true
+      
+      var config = UIButton.Configuration.gray()
+      config.buttonSize = .small
+      config.cornerStyle = .dynamic
+      
+      button.configuration = config
+    }
+    else {
+      button.backgroundColor = .secondarySystemFill
+    }
+    
+    return button
+  }
+  
+  lazy var leftExpressionPopupButton: UIButton = {
+    let menuActions = leftExpressions.compactMap { expression in
+      UIAction(title: expression.keyPath) { [weak self] _ in
+        #if DEBUG
+        print("[UIPredicateEditor] left expression action: \(expression.keyPath)")
+        #endif
+        self?.updatePredicate()
+      }
+    }
+    
+    return buttonWithMenu(menuActions)
+  }()
+  
+  lazy var operatorsPopupButton: UIButton = {
+    let menuActions = operators.map { operation in
+      UIAction(title: operation.localizedTitle) { [weak self] _ in
+        #if DEBUG
+        print("[UIPredicateEditor] operation action: \(operation.localizedTitle)")
+        #endif
+        
+        self?.updatePredicate()
+      }
+    }
+    
+    return buttonWithMenu(menuActions)
+  }()
+  
+  lazy var operatorStaticLabel: UILabel = {
+    let label = UILabel()
+    label.text = operators.first!.localizedTitle
+    label.font = UIFont.systemFont(ofSize: 14, weight: .regular)
+    label.textColor = .secondaryLabel
+    label.numberOfLines = 1
+    label.sizeToFit()
+    
+    return label
+  }()
+  
+  lazy var rightExpressionPopupButton: UIButton = {
+    let menuActions = rightExpressions.compactMap { expression -> UIAction in
+      var title: String = ""
+      
+      switch expression.expressionType {
+      case .constantValue:
+        if let stringContent = expression.constantValue as? String {
+          title = stringContent
+        }
+        else {
+          title = String(describing: expression.constantValue)
+        }
+      case .keyPath:
+        title = expression.keyPath
+      default:
+        // not implemented yet
+        break
+      }
+      
+      return UIAction(title: title) { [weak self] _ in
+        #if DEBUG
+        print("[UIPredicateEditor] right expression action: \(title)")
+        #endif
+        
+        self?.updatePredicate()
+      }
+    }
+    
+    return buttonWithMenu(menuActions)
+  }()
+  
+  lazy var boolMenuButton: UIButton = {
+    let menuActions = [NSLocalizedString("Yes", comment: "Yes"), NSLocalizedString("No", comment: "No")].compactMap { bool in
+      UIAction(title: bool) { [weak self] _ in
+        #if DEBUG
+        print("[UIPredicateEditor] boolean menu action: \(bool)")
+        #endif
+        
+        self?.updatePredicate()
+      }
+    }
+    
+    return buttonWithMenu(menuActions)
+  }()
+  
+  lazy var compoundTypesButton: UIButton = {
+    let menuActions = compoundTypes.compactMap { type in
+      UIAction(title: type.localizedTitle) { [weak self] _ in
+        #if DEBUG
+        print("[UIPredicateEditor] compound type menu action: \(type.localizedTitle)")
+        #endif
+      }
+    }
+    
+    return buttonWithMenu(menuActions)
+  }()
+  
+  lazy var textInputView: UITextField = {
+    let textField = UITextField()
+    textField.spellCheckingType = .no
+    textField.textColor = .label
+    textField.font = .systemFont(ofSize: 14, weight: .regular)
+    
+    switch rightExpressionAttributeType! {
+    case .URIAttributeType:
+      textField.keyboardType = .URL
+      textField.textContentType = .URL
+      textField.placeholder = "URL"
+      
+    case .decimalAttributeType, .floatAttributeType, .integer16AttributeType, .integer32AttributeType, .integer64AttributeType:
+      textField.keyboardType = .numbersAndPunctuation
+      textField.placeholder = "Number"
+    default:
+      textField.keyboardType = UIKeyboardType.default
+      textField.placeholder = "Value"
+    }
+    
+    textField.sizeToFit()
+    
+    return textField
+  }()
+  
+  lazy var dateInputView: UIDatePicker = {
+    let datePicker = UIDatePicker()
+    datePicker.datePickerMode = .dateAndTime
+    
+    if #available(iOS 14.0, *) {
+      datePicker.preferredDatePickerStyle = .inline
+    }
+    
+    datePicker.sizeToFit()
+    
+    return datePicker
+  }()
+}
+
+// MARK: - Copying
+
+extension UIPredicateEditorRowTemplate: NSCopying {
+  open func copy(with zone: NSZone? = nil) -> Any {
+    UIPredicateEditorRowTemplate(from: self)
+  }
+}
+
+// MARK: - Debug
+
+extension UIPredicateEditorRowTemplate {
+  open override var description: String {
+    let inherit = super.description
+    let meta = ", predicate: \(self.predicate?.predicateFormat ?? "no predicate"), view count: \(templateViews.count)"
+    
+    return inherit + meta
   }
 }
