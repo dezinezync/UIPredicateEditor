@@ -274,13 +274,13 @@ open class UIPredicateEditorRowTemplate: NSObject {
       if #available(iOS 14, macCatalyst 11.0, *) {
         if let selected = self.compoundTypesButton.menu?.uiSelectedElements.first as? UIAction {
           if selected.title == NSCompoundPredicate.LogicalType.and.localizedTitle {
-            self.predicate = NSPredicate(format: "AND")
+            self.predicate = NSCompoundPredicate(type: .and, subpredicates: [])
           }
           else if selected.title == NSCompoundPredicate.LogicalType.or.localizedTitle {
-            self.predicate = NSPredicate(format: "OR")
+            self.predicate = NSCompoundPredicate(type: .or, subpredicates: [])
           }
           else if selected.title == NSCompoundPredicate.LogicalType.and.localizedTitle {
-            self.predicate = NSPredicate(format: "NOT")
+            self.predicate = NSCompoundPredicate(type: .not, subpredicates: [])
           }
         }
       }
@@ -598,6 +598,8 @@ extension UIPredicateEditorRowTemplate {
 
 // MARK: - Internal Extensions
 extension UIMenu {
+  
+  /// iOS 14 compatibility method for fetching selected menu items 
   var uiSelectedElements: [UIMenuElement] {
     if #available(iOS 15, macCatalyst 12.0, *) {
       return selectedElements

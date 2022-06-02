@@ -136,6 +136,20 @@ open class UIPredicateEditorController: UICollectionViewController {
   }
   
   // MARK: Internal
+  internal func updatePredicate(for logicalType: NSCompoundPredicate.LogicalType) {
+    let predicates = requiredRowTemplates.compactMap { $0.predicate }
+    let compoundPredicate = NSCompoundPredicate(
+      type: logicalType,
+      subpredicates: predicates
+    )
+    
+    self.predicate = compoundPredicate
+    
+    DispatchQueue.main.async {
+      NotificationCenter.default.post(name: .predicateDidChange, object: self)
+    }
+  }
+  
   internal var subpredicates: [NSPredicate] {
     if let predicate = predicate as? NSCompoundPredicate {
       let subpredicates = predicate.subpredicates.compactMap { $0 as? NSPredicate }
@@ -232,6 +246,7 @@ extension UIPredicateEditorController {
       view.removeFromSuperview()
     }
     
+    rowTemplate.refreshDelegate = self
     let views = rowTemplate.templateViews
     
     var previousViewAnchor: NSLayoutAnchor = cell.contentView.leadingAnchor
@@ -255,6 +270,7 @@ extension UIPredicateEditorController {
   }
 }
 
+// MARK: - UIPredicateEditorRefreshing
 extension UIPredicateEditorController: UIPredicateEditorRefreshing {
   public func reconfigure(_ cell: UIPredicateEditorBaseCell) {
     
@@ -272,5 +288,33 @@ extension UIPredicateEditorController: UIPredicateEditorRefreshing {
     else {
       collectionView.reloadItems(at: [indexPath])
     }
+    
+    refreshContentView()
+  }
+}
+
+// MARK: - UIPredicateEditorContentRefreshing
+extension UIPredicateEditorController: UIPredicateEditorContentRefreshing {
+  public func refreshContentView() {
+    
+    if #available(iOS 14.0, macCatalyst 11.0, *) {
+      // only called for the compund type predicate
+      guard let cell = collectionView.cellForItem(at: IndexPath(item: 0, section: 0)),
+            let button = cell.contentView.subviews[0] as? UIButton,
+            let action = button.menu?.uiSelectedElements.first as? UIAction else {
+        return
+      }
+      
+      if action.title == NSCompoundPredicate.LogicalType.or.localizedTitle {
+        updatePredicate(for: .or)
+      }
+      else if action.title == NSCompoundPredicate.LogicalType.not.localizedTitle {
+        updatePredicate(for: .not)
+      }
+      else {
+        updatePredicate(for: .and)
+      }
+    }
+    
   }
 }
