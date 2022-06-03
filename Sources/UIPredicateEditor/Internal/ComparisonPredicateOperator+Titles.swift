@@ -8,58 +8,68 @@
 import Foundation
 
 extension NSCompoundPredicate.LogicalType {
-  var localizedTitle: String {
+  var title: String {
     switch self {
     case .and:
-      return NSLocalizedString("All", comment: "All")
+      return "All"
     case .or:
-      return NSLocalizedString("Any", comment: "Any")
+      return "Any"
     case .not:
-      return NSLocalizedString("None", comment: "None")
+      return "None"
     @unknown default:
       fatalError("unknown logical type")
     }
   }
+  
+  var localizedTitle: String {
+    let title = self.title
+    return NSLocalizedString(title, comment: title)
+  }
 }
 
 extension NSComparisonPredicate.Operator {
-  var localizedTitle: String {
+  var title: String {
     switch self {
     case .lessThan:
-      return NSLocalizedString("is less than", comment: "less than")
+      return "is less than"
     case .lessThanOrEqualTo:
-      return NSLocalizedString("is less than or equal to", comment: "less than or equal to")
+      return "is less than or equal to"
     case .greaterThan:
-      return NSLocalizedString("is greater than", comment: "greater than")
+      return "is greater than"
     case .greaterThanOrEqualTo:
-      return NSLocalizedString("is greater than or equal to", comment: "greater than or equal to")
+      return "is greater than or equal to"
     case .equalTo:
-      return NSLocalizedString("is", comment: "is")
+      return "is"
     case .notEqualTo:
-      return NSLocalizedString("is not", comment: "is not")
+      return "is not"
     case .matches:
-      return NSLocalizedString("matches", comment: "matches")
+      return "matches"
     case .like:
-      return NSLocalizedString("like", comment: "like")
+      return "like"
     case .beginsWith:
-      return NSLocalizedString("begins with", comment: "begins with")
+      return "begins with"
     case .endsWith:
-      return NSLocalizedString("ends with", comment: "ends with")
+      return "ends with"
     case .in:
-      return NSLocalizedString("in", comment: "in")
+      return "in"
     case .customSelector:
       fatalError("Unimplemented")
     case .contains:
-      return NSLocalizedString("contains", comment: "contains")
+      return "contains"
     case .between:
-      return NSLocalizedString("between", comment: "between")
+      return "between"
     @unknown default:
       fatalError("Unknown operator")
     }
   }
   
-  static func from(_ title: String) -> NSComparisonPredicate.Operator {
-    switch title {
+  var localizedTitle: String {
+    let title = self.title
+    return NSLocalizedString(title, comment: title)
+  }
+  
+  static func from(_ localizedTitle: String) -> NSComparisonPredicate.Operator {
+    switch localizedTitle {
     case NSLocalizedString("is less than", comment: "less than"):
       return .lessThan
     case NSLocalizedString("is less than or equal to", comment: "less than or equal to"):
