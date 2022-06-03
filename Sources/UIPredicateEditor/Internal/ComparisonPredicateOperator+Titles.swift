@@ -26,17 +26,17 @@ extension NSComparisonPredicate.Operator {
   var localizedTitle: String {
     switch self {
     case .lessThan:
-      return NSLocalizedString("less than", comment: "less than")
+      return NSLocalizedString("is less than", comment: "less than")
     case .lessThanOrEqualTo:
-      return NSLocalizedString("less than or equal to", comment: "less than or equal to")
+      return NSLocalizedString("is less than or equal to", comment: "less than or equal to")
     case .greaterThan:
-      return NSLocalizedString("greater than", comment: "greater than")
+      return NSLocalizedString("is greater than", comment: "greater than")
     case .greaterThanOrEqualTo:
-      return NSLocalizedString("greater than or equal to", comment: "greater than or equal to")
+      return NSLocalizedString("is greater than or equal to", comment: "greater than or equal to")
     case .equalTo:
-      return NSLocalizedString("equal to", comment: "equal to")
+      return NSLocalizedString("is", comment: "is")
     case .notEqualTo:
-      return NSLocalizedString("not equal to", comment: "not equal to")
+      return NSLocalizedString("is not", comment: "is not")
     case .matches:
       return NSLocalizedString("matches", comment: "matches")
     case .like:
@@ -60,17 +60,17 @@ extension NSComparisonPredicate.Operator {
   
   static func from(_ title: String) -> NSComparisonPredicate.Operator {
     switch title {
-    case NSLocalizedString("less than", comment: "less than"):
+    case NSLocalizedString("is less than", comment: "less than"):
       return .lessThan
-    case NSLocalizedString("less than or equal to", comment: "less than or equal to"):
+    case NSLocalizedString("is less than or equal to", comment: "less than or equal to"):
       return .lessThanOrEqualTo
-    case NSLocalizedString("greater than", comment: "greater than"):
+    case NSLocalizedString("is greater than", comment: "greater than"):
       return .greaterThan
-    case NSLocalizedString("greater than or equal to", comment: "greater than or equal to"):
+    case NSLocalizedString("is greater than or equal to", comment: "greater than or equal to"):
       return .greaterThanOrEqualTo
-    case NSLocalizedString("equal to", comment: "equal to"):
+    case NSLocalizedString("is", comment: "is"):
       return .equalTo
-    case NSLocalizedString("not equal to", comment: "not equal to"):
+    case NSLocalizedString("is not", comment: "is not"):
       return .notEqualTo
     case NSLocalizedString("matches", comment: "matches"):
       return .matches
