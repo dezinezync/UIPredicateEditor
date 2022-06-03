@@ -124,6 +124,45 @@ open class UIPredicateEditorController: UICollectionViewController {
       // create a copy of the template
       let copy = firstMatch.copy() as! UIPredicateEditorRowTemplate
       
+      // check if the formatting dictionary is setup
+      // match localization formats to the predicate
+      // if we get a primary match, extract all partial matches
+      // and set it up on the row template copy
+      if let comparison = predicate as? NSComparisonPredicate,
+         let formattingDictionary = formattingDictionary {
+        
+        let lhsComparison = comparison.leftExpression
+        let rhsComparison = comparison.rightExpression
+        let comparisonOp = comparison.predicateOperatorType
+        
+        if let lhsKey = lhsComparison.expressionType == .constantValue ? lhsComparison.constantValue as? String : (lhsComparison.expressionType == .keyPath ? lhsComparison.keyPath : ""),
+           let rhsKey = rhsComparison.expressionType == .constantValue ? rhsComparison.constantValue as? String : (rhsComparison.expressionType == .keyPath ? rhsComparison.keyPath : "") {
+          
+          let keyToMatch = "%[\(lhsKey)]@ %[\(comparisonOp.title)]@ %[\(rhsKey)]@"
+          
+          if let matchedLocalization = formattingDictionary.first(where: { (key: String, value: String) in
+            key == keyToMatch
+          }) {
+            
+            /// the partial key only matches the left expression. The formatting
+            /// dictionary may have strings for multiple operator and right expression
+            /// combinations. This makes a gross assumption that all partial key matches
+            /// are valid for this row template.
+            let partialKeyToMatch = "%[\(lhsKey)]@"
+            
+            let allPartialMatches = formattingDictionary.filter { (key, value) in
+              return key.contains(partialKeyToMatch)
+            }
+            
+            #if DEBUG
+            print("[UIPredicateEditor] localization matches for predicate: \(comparison), firstMatch: \(matchedLocalization), all partial matches: \(allPartialMatches)")
+            #endif
+            
+            copy.formattingDictionary = allPartialMatches
+          }
+        }
+      }
+      
       // update the predicate so it can internally update values on its views
       copy.setPredicate(predicate)
       

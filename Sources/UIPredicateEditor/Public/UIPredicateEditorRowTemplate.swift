@@ -46,6 +46,12 @@ open class UIPredicateEditorRowTemplate: NSObject {
   /// Only setup on copies of templates currently managed by the `UIPredicateEditor`.
   internal var predicate: NSPredicate?
   
+  /// Matched formatting items from the predicate editor if a value was set.
+  ///
+  /// This list matches the current `predicate` setup on the template.
+  /// This value is only available on the template row copies and never the original template rows. 
+  internal var formattingDictionary: [String: String]?
+  
   /// Initializes and returns a “pop-up-pop-up-pop-up”–style row template.
   /// - Parameters:
   ///   - leftExpressions: An array of ``NSExpression`` objects that represent the left side of a predicate.
@@ -349,7 +355,7 @@ open class UIPredicateEditorRowTemplate: NSObject {
             rightExpression = NSExpression(forConstantValue: url)
           }
           else if textField.keyboardType == .numbersAndPunctuation {
-            var text = (textField.text ?? "") as NSString
+            let text = (textField.text ?? "") as NSString
             
             if rightExpressionAttributeType == .doubleAttributeType {
               rightExpression = NSExpression(forConstantValue: text.doubleValue)
