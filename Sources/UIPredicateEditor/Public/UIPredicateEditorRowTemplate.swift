@@ -52,6 +52,14 @@ open class UIPredicateEditorRowTemplate: NSObject {
   /// This value is only available on the template row copies and never the original template rows. 
   internal var formattingDictionary: [String: String]?
   
+  private lazy var formattingHelper: FormattingDictionaryHelper? = {
+    guard let formattingDictionary = formattingDictionary else {
+      return nil
+    }
+
+    return FormattingDictionaryHelper(formattingDictionary: formattingDictionary)
+  }()
+  
   /// Initializes and returns a “pop-up-pop-up-pop-up”–style row template.
   /// - Parameters:
   ///   - leftExpressions: An array of ``NSExpression`` objects that represent the left side of a predicate.
@@ -300,29 +308,17 @@ open class UIPredicateEditorRowTemplate: NSObject {
     if #available(iOS 14, macCatalyst 11.0, *) {
       if let button = leftExpressionView as? UIButton,
          let item = button.menu?.uiSelectedElements.first as? UIAction {
-        let title = item.title
+        
+        var title = item.title
+        
+        // we may have localized this title
+        if let formattingHelper = formattingHelper,
+           let baseKey = formattingHelper.lhsReverseMatch(for: title) {
+          title = baseKey
+        }
+        
         let matchingExpression = leftExpressions.first { expression in
-          switch expression.expressionType {
-          case .constantValue:
-            let value = expression.constantValue
-            if let stringValue = value as? String,
-               title == stringValue {
-              return true
-            }
-            
-            let description = String(describing: value)
-            if title == description {
-              return true
-            }
-            
-            return false
-            
-          case .keyPath:
-            return expression.keyPath == title
-          default:
-            // TODO: Implement other types
-            return false
-          }
+          title == expression.stringValue
         }
         
         leftExpression = matchingExpression
@@ -340,7 +336,15 @@ open class UIPredicateEditorRowTemplate: NSObject {
         
         if let rightExpressionView = rightExpressionView as? UIButton,
            let item = rightExpressionView.menu?.uiSelectedElements.first as? UIAction {
-          let title = item.title
+          
+          var title = item.title
+          
+          // we may have localized this title
+          if let formattingHelper = formattingHelper,
+             let baseKey = formattingHelper.rhsReverseMatch(for: title) {
+            title = baseKey
+          }
+          
           rightExpression = NSExpression(forConstantValue: title)
         }
         else if let textField = rightExpressionView as? UITextField {
@@ -401,6 +405,11 @@ open class UIPredicateEditorRowTemplate: NSObject {
     if #available(iOS 14.0, *) {
       button.menu = UIMenu(children: actions)
       button.showsMenuAsPrimaryAction = true
+      
+      if actions.count == 1 {
+        // single value, disable interaction
+        button.isUserInteractionEnabled = false
+      }
     }
     else {
       // fallback for older versions
@@ -409,11 +418,20 @@ open class UIPredicateEditorRowTemplate: NSObject {
     if #available(iOS 15, macCatalyst 12.0, *) {
       button.changesSelectionAsPrimaryAction = true
       
-      var config = UIButton.Configuration.gray()
-      config.buttonSize = .small
-      config.cornerStyle = .dynamic
-      
-      button.configuration = config
+      if actions.count > 1 {
+        var config = UIButton.Configuration.gray()
+        config.buttonSize = .small
+        config.cornerStyle = .dynamic
+        
+        button.configuration = config
+      }
+      else {
+        // single action, disable tappable appearance
+        var config = UIButton.Configuration.plain()
+        config.buttonSize = .small
+        
+        button.configuration = config
+      }
     }
     else {
       button.backgroundColor = .secondarySystemFill
@@ -423,10 +441,29 @@ open class UIPredicateEditorRowTemplate: NSObject {
   }
   
   lazy var leftExpressionPopupButton: UIButton = {
-    let menuActions = leftExpressions.compactMap { expression in
-      UIAction(title: expression.keyPath) { [weak self] _ in
+    // check if we have any matching localization templates
+    var expressions = leftExpressions
+    
+    if let formattingHelper = formattingHelper {
+      
+      expressions = expressions.map { expression in
+        guard let stringValue = expression.stringValue,
+              let localizedValue = formattingHelper.lhsMatch(for: stringValue) else {
+          return expression
+        }
+        
+        return NSExpression(forConstantValue: localizedValue)
+      }
+    }
+    
+    let menuActions: [UIAction] = expressions.compactMap { expression in
+      guard let stringValue = expression.stringValue else {
+        return nil
+      }
+      
+      return UIAction(title: stringValue) { [weak self] _ in
         #if DEBUG
-        print("[UIPredicateEditor] left expression action: \(expression.keyPath)")
+        print("[UIPredicateEditor] left expression action: \(stringValue)")
         #endif
         self?.updatePredicate()
       }
@@ -461,22 +498,24 @@ open class UIPredicateEditorRowTemplate: NSObject {
   }()
   
   lazy var rightExpressionPopupButton: UIButton = {
-    let menuActions = rightExpressions.compactMap { expression -> UIAction in
-      var title: String = ""
+    // check if we have any matching localization templates
+    var expressions = rightExpressions
+    
+    if let formattingHelper = formattingHelper {
       
-      switch expression.expressionType {
-      case .constantValue:
-        if let stringContent = expression.constantValue as? String {
-          title = stringContent
+      expressions = expressions.map { expression in
+        guard let stringValue = expression.stringValue,
+              let localizedValue = formattingHelper.rhsMatch(for: stringValue) else {
+          return expression
         }
-        else {
-          title = String(describing: expression.constantValue)
-        }
-      case .keyPath:
-        title = expression.keyPath
-      default:
-        // not implemented yet
-        break
+        
+        return NSExpression(forConstantValue: localizedValue)
+      }
+    }
+    
+    let menuActions = expressions.compactMap { expression -> UIAction? in
+      guard let title = expression.stringValue else {
+        return nil
       }
       
       return UIAction(title: title) { [weak self] _ in

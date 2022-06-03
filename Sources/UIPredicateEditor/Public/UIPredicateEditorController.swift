@@ -135,8 +135,8 @@ open class UIPredicateEditorController: UICollectionViewController {
         let rhsComparison = comparison.rightExpression
         let comparisonOp = comparison.predicateOperatorType
         
-        if let lhsKey = lhsComparison.expressionType == .constantValue ? lhsComparison.constantValue as? String : (lhsComparison.expressionType == .keyPath ? lhsComparison.keyPath : ""),
-           let rhsKey = rhsComparison.expressionType == .constantValue ? rhsComparison.constantValue as? String : (rhsComparison.expressionType == .keyPath ? rhsComparison.keyPath : "") {
+        if let lhsKey = lhsComparison.stringValue,
+           let rhsKey = rhsComparison.stringValue {
           
           let keyToMatch = "%[\(lhsKey)]@ %[\(comparisonOp.title)]@ %[\(rhsKey)]@"
           
