@@ -179,11 +179,6 @@ open class UIPredicateEditorRowTemplate: NSObject {
         score += match(for: subpredicate) >= 0.5 ? incrementCounter : 0.0
       }
     }
-    else {
-      // standard predicate
-      // @TODO: Implement score evaluation for standard predicates
-      print(predicate.predicateFormat)
-    }
     
     return score
   }
