@@ -50,9 +50,9 @@ open class UIPredicateEditorRowTemplate: NSObject {
   ///
   /// This list matches the current `predicate` setup on the template.
   /// This value is only available on the template row copies and never the original template rows. 
-  internal var formattingDictionary: [String: String]?
+  var formattingDictionary: [String: String]?
   
-  private lazy var formattingHelper: FormattingDictionaryHelper? = {
+  lazy var formattingHelper: FormattingDictionaryHelper? = {
     guard let formattingDictionary = formattingDictionary else {
       return nil
     }
@@ -279,6 +279,16 @@ open class UIPredicateEditorRowTemplate: NSObject {
       refreshDelegate?.refreshContentView()
     }
     
+    guard let comparisonPredicate = predicateForCurrentState() else {
+      return
+    }
+    
+    self.predicate = comparisonPredicate
+  }
+  
+  /// Returns the predicate evaluated from the current state of its views
+  /// - Returns: `NSComparisonPredicate` if one could be formed
+  public func predicateForCurrentState() -> NSComparisonPredicate? {
     if !self.compoundTypes.isEmpty {
       if #available(iOS 14, macCatalyst 11.0, *) {
         if let selected = self.compoundTypesButton.menu?.uiSelectedElements.first as? UIAction {
@@ -294,7 +304,7 @@ open class UIPredicateEditorRowTemplate: NSObject {
         }
       }
       
-      return
+      return nil
     }
     
     // update the predicate
@@ -382,9 +392,34 @@ open class UIPredicateEditorRowTemplate: NSObject {
       }
     }
     
+    if rightExpression == nil,
+       let rightExpressionAttributeType = rightExpressionAttributeType {
+      if rightExpressionAttributeType == .URIAttributeType {
+        rightExpression = NSExpression(forConstantValue: URL(string: ""))
+      }
+      else if rightExpressionAttributeType == .doubleAttributeType {
+        rightExpression = NSExpression(forConstantValue: 0.0)
+      }
+      else if rightExpressionAttributeType == .floatAttributeType {
+        rightExpression = NSExpression(forConstantValue: 0.0)
+      }
+      else if rightExpressionAttributeType == .integer16AttributeType || rightExpressionAttributeType == .integer32AttributeType {
+        rightExpression = NSExpression(forConstantValue: 0)
+      }
+      else if rightExpressionAttributeType == .integer64AttributeType {
+        rightExpression = NSExpression(forConstantValue: 0)
+      }
+      /*
+       * Use the following template to handle additional cases
+       else if rightExpressionAttributeType == <#type#> {
+         rightExpression = NSExpression(forConstantValue: text.<#valueType#>)
+       }
+       */
+    }
+    
     guard let leftExpression = leftExpression,
           let rightExpression = rightExpression else {
-      return
+      return nil
     }
     
     let comparisonPredicate = NSComparisonPredicate(
@@ -395,7 +430,7 @@ open class UIPredicateEditorRowTemplate: NSObject {
       options: options
     )
     
-    self.predicate = comparisonPredicate
+    return comparisonPredicate
   }
   
   // MARK: Views

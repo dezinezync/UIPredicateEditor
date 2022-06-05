@@ -19,6 +19,7 @@ open class UIPredicateEditorLayout: UICollectionViewCompositionalLayout {
     var configuration = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
     configuration.backgroundColor = .systemGroupedBackground
     configuration.showsSeparators = true
+    configuration.footerMode = .supplementary
     
     return .list(using: configuration)
   }

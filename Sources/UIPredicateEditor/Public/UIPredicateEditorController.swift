@@ -73,6 +73,11 @@ open class UIPredicateEditorController: UICollectionViewController {
   /// set to `false` once the view appears and the initial predicate is setup.
   private var isLoading: Bool = true
   
+  /// this is created on-demand everytime as the formatting dictionary may change during runtime
+  var formattingHelper: FormattingDictionaryHelper {
+    FormattingDictionaryHelper(formattingDictionary: formattingDictionary ?? [:])
+  }
+  
   // MARK: Init
   
   public init(predicate: NSPredicate, rowTemplates: [UIPredicateEditorRowTemplate], layout: UICollectionViewLayout) {
@@ -97,8 +102,9 @@ open class UIPredicateEditorController: UICollectionViewController {
   open override func viewDidLoad() {
     super.viewDidLoad()
     
-    // register our cell
+    // register our views
     UIPredicateEditorBaseCell.register(on: collectionView)
+    UIPredicateEditorFooterView.register(on: collectionView)
     
     // reload the predicate and update the view
     reloadPredicate()
@@ -129,51 +135,14 @@ open class UIPredicateEditorController: UICollectionViewController {
       })
       
       // create a copy of the template
-      let copy = firstMatch.copy() as! UIPredicateEditorRowTemplate
+      let templateCopy = firstMatch.copy() as! UIPredicateEditorRowTemplate
       
-      // check if the formatting dictionary is setup
-      // match localization formats to the predicate
-      // if we get a primary match, extract all partial matches
-      // and set it up on the row template copy
-      if let comparison = predicate as? NSComparisonPredicate,
-         let formattingDictionary = formattingDictionary {
-        
-        let lhsComparison = comparison.leftExpression
-        let rhsComparison = comparison.rightExpression
-        let comparisonOp = comparison.predicateOperatorType
-        
-        if let lhsKey = lhsComparison.stringValue,
-           let rhsKey = rhsComparison.stringValue {
-          
-          let keyToMatch = "%[\(lhsKey)]@ %[\(comparisonOp.title)]@ %[\(rhsKey)]@"
-          
-          if let matchedLocalization = formattingDictionary.first(where: { (key: String, value: String) in
-            key == keyToMatch
-          }) {
-            
-            /// the partial key only matches the left expression. The formatting
-            /// dictionary may have strings for multiple operator and right expression
-            /// combinations. This makes a gross assumption that all partial key matches
-            /// are valid for this row template.
-            let partialKeyToMatch = "%[\(lhsKey)]@"
-            
-            let allPartialMatches = formattingDictionary.filter { (key, value) in
-              return key.contains(partialKeyToMatch)
-            }
-            
-            #if DEBUG
-            print("[UIPredicateEditor] localization matches for predicate: \(comparison), firstMatch: \(matchedLocalization), all partial matches: \(allPartialMatches)")
-            #endif
-            
-            copy.formattingDictionary = allPartialMatches
-          }
-        }
-      }
+      setFormattingDictionary(on: templateCopy, predicate: predicate)
       
       // update the predicate so it can internally update values on its views
-      copy.setPredicate(predicate)
+      templateCopy.setPredicate(predicate)
       
-      return copy
+      return templateCopy
     }
     
     self.requiredRowTemplates = matchingRowTemplates
@@ -266,6 +235,25 @@ open class UIPredicateEditorController: UICollectionViewController {
     return cell
   }
   
+  // MARK: Footers
+  open override func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+    
+    let footerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: UIPredicateEditorFooterView.identifier, for: indexPath) as! UIPredicateEditorFooterView
+    
+    // only the last section should have a footer
+    if indexPath.section != (numberOfSections(in: collectionView) - 1) {
+      footerView.button?.removeFromSuperview()
+    }
+    else {
+      footerView.constructView() // button may have been removed, add it back. Has no effect if the button already exists.
+      configure(footerView: footerView)
+    }
+    
+    return footerView
+  }
+  
+  // MARK: Menus
+  
   open override func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
     guard indexPath.section > 0 else { return nil }
     
@@ -339,6 +327,114 @@ extension UIPredicateEditorController {
       previousViewAnchor = view.trailingAnchor
     }
   }
+  
+  open func configure(footerView: UIPredicateEditorFooterView) {
+    guard let button = footerView.button else {
+      return
+    }
+    
+    guard #available(iOS 14, macCatalyst 11.0, *) else {
+      return
+    }
+    
+    let formattingHelper = self.formattingHelper
+    
+    let actions: [UIMenuElement] = self.rowTemplates.map { template in
+      template.leftExpressions.compactMap { expression in
+        guard let stringValue = expression.stringValue else {
+          return nil
+        }
+        
+        if let formattedTitle = formattingHelper.lhsMatch(for: stringValue) {
+          return formattedTitle
+        }
+        
+        return stringValue
+      }.map { title in
+        UIAction(title: title) { [weak self] _ in
+          #if DEBUG
+          print("UIPredicateEditor: footer button: selected expression with title: \(title)")
+          #endif
+          
+          self?.addRowTemplate(for: title)
+        }
+      }
+    }.reduce([], +)
+    
+    button.menu = UIMenu(
+      title: NSLocalizedString("New", comment: ""),
+      children: actions
+    )
+  }
+  
+  private func addRowTemplate(for leftExpressionTitle: String) {
+    var title = leftExpressionTitle
+    
+    // check if this a localized title
+    if let matchedTitle = formattingHelper.lhsReverseMatch(for: title) {
+      title = matchedTitle
+    }
+    
+    // find the associated row template
+    guard let matchedTemplate = rowTemplates.first(where: { template in
+      template.leftExpressions.first(where: { expression in
+        expression.stringValue == title
+      }) != nil
+    }) else {
+      return
+    }
+    
+    let templateCopy = matchedTemplate.copy() as! UIPredicateEditorRowTemplate
+    
+    if let predicate = templateCopy.predicateForCurrentState() {
+      setFormattingDictionary(on: templateCopy, predicate: predicate)
+      templateCopy.setPredicate(predicate)
+    }
+    
+    requiredRowTemplates.append(templateCopy)
+    collectionView.reloadData()
+  }
+  
+  /// check if the formatting dictionary is setup, match localization formats to the predicate. If we get a primary match, extract all partial matches and set it up on the row template
+  /// - Parameters:
+  ///   - rowTemplate: the row template to update
+  ///   - predicate: the predicate to match with
+  private func setFormattingDictionary(on rowTemplate: UIPredicateEditorRowTemplate, predicate: NSPredicate) {
+    if let comparison = predicate as? NSComparisonPredicate,
+       let formattingDictionary = formattingDictionary {
+      
+      let lhsComparison = comparison.leftExpression
+      let rhsComparison = comparison.rightExpression
+      let comparisonOp = comparison.predicateOperatorType
+      
+      if let lhsKey = lhsComparison.stringValue,
+         let rhsKey = rhsComparison.stringValue {
+        
+        let keyToMatch = "%[\(lhsKey)]@ %[\(comparisonOp.title)]@ %[\(rhsKey)]@"
+        
+        if let matchedLocalization = formattingDictionary.first(where: { (key: String, value: String) in
+          key == keyToMatch
+        }) {
+          
+          /// the partial key only matches the left expression. The formatting
+          /// dictionary may have strings for multiple operator and right expression
+          /// combinations. This makes a gross assumption that all partial key matches
+          /// are valid for this row template.
+          let partialKeyToMatch = "%[\(lhsKey)]@"
+          
+          let allPartialMatches = formattingDictionary.filter { (key, value) in
+            return key.contains(partialKeyToMatch)
+          }
+          
+          #if DEBUG
+          print("[UIPredicateEditor] localization matches for predicate: \(comparison), firstMatch: \(matchedLocalization), all partial matches: \(allPartialMatches)")
+          #endif
+          
+          rowTemplate.formattingDictionary = allPartialMatches
+        }
+      }
+    }
+  }
 }
 
 // MARK: - UIPredicateEditorRefreshing
@@ -386,6 +482,5 @@ extension UIPredicateEditorController: UIPredicateEditorContentRefreshing {
         updatePredicate(for: .and)
       }
     }
-    
   }
 }
