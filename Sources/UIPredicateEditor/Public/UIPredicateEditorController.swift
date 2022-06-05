@@ -60,6 +60,11 @@ open class UIPredicateEditorController: UICollectionViewController {
   public var formattingStringsFilename: String?
   // @TODO: Implementation pending
   
+  /// show context menus from the rows to delete the row if necessary.
+  open var showContextMenus: Bool { true }
+  
+  // MARK: Private
+  
   /// Internal copy of row templates, which will be used to populate the collection view.
   ///
   /// Each row will have its own predicate which is used to form the predicate on the `UIPredicateEditor`.
@@ -67,6 +72,8 @@ open class UIPredicateEditorController: UICollectionViewController {
   
   /// set to `false` once the view appears and the initial predicate is setup.
   private var isLoading: Bool = true
+  
+  // MARK: Init
   
   public init(predicate: NSPredicate, rowTemplates: [UIPredicateEditorRowTemplate], layout: UICollectionViewLayout) {
     precondition(!rowTemplates.isEmpty, "Initialize the UIPredicateEditor with atleast one row template")
@@ -257,6 +264,31 @@ open class UIPredicateEditorController: UICollectionViewController {
     }
     
     return cell
+  }
+  
+  open override func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+    guard indexPath.section > 0 else { return nil }
+    
+    guard showContextMenus else { return nil }
+    
+    let deleteAction = UIAction(
+      title: NSLocalizedString("Delete", comment: ""),
+      image: UIImage(systemName: "trash")) { [weak self] _ in
+        guard let self = self else { return }
+        
+        let index = indexPath.item
+        _ = self.requiredRowTemplates.remove(at: index)
+        
+        self.refreshContentView()
+        self.collectionView.reloadData()
+      }
+    
+    return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+      UIMenu(
+        title: NSLocalizedString("Row Actions", comment: ""),
+        children: [deleteAction]
+      )
+    }
   }
 
 }

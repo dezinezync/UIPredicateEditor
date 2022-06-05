@@ -16,7 +16,7 @@ open class UIPredicateEditorCellConfiguration: UIContentConfiguration, Equatable
   
   internal var state: UICellConfigurationState
   
-  private(set) unowned var rowTemplate: UIPredicateEditorRowTemplate
+  private(set) weak var rowTemplate: UIPredicateEditorRowTemplate?
   
   weak var delegate: UIPredicateEditorContentRefreshing?
   
@@ -245,7 +245,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     }
     
     appliedConfiguration = configuration
-    appliedConfiguration.rowTemplate.refreshDelegate = self
+    appliedConfiguration.rowTemplate?.refreshDelegate = self
     
     // setup the view
     constructView()
@@ -261,7 +261,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
       self.contentView = contentView
     }
     
-    let rowViews = appliedConfiguration.rowTemplate.templateViews
+    let rowViews = appliedConfiguration.rowTemplate?.templateViews ?? []
     precondition(rowViews.count >= 2, "Expected atleast 2 views.")
     
     let leftExpressionView = rowViews[0]
