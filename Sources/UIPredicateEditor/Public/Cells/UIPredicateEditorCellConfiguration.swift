@@ -86,6 +86,10 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     
     let cellBounds = bounds
     
+    if contentView == nil {
+      constructView()
+    }
+    
     // match width and height of self
     contentView.frame = cellBounds
     

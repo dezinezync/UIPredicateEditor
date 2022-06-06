@@ -50,7 +50,6 @@ open class UIPredicateEditorController: UICollectionViewController {
   ///
   /// If you assign a new the formatting dictionary to this property, it sets the current to formatting strings file name to `nil`.
   public var formattingDictionary: [String: String]?
-  // @TODO: Implementation pending
   
   /// The name of the rule editor’s strings file.
   ///

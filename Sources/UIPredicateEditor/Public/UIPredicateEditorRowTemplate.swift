@@ -599,6 +599,11 @@ open class UIPredicateEditorRowTemplate: NSObject {
     textField.textColor = .label
     textField.font = .systemFont(ofSize: 14, weight: .regular)
     
+    // styling
+    textField.backgroundColor = .tertiarySystemBackground
+    textField.layer.cornerRadius = 4
+    textField.layer.masksToBounds = true
+    
     switch rightExpressionAttributeType! {
     case .URIAttributeType:
       textField.keyboardType = .URL
