@@ -386,7 +386,7 @@ extension UIPredicateEditorController {
     
     let templateCopy = matchedTemplate.copy() as! UIPredicateEditorRowTemplate
     
-    if let predicate = templateCopy.predicateForCurrentState() {
+    if let predicate = matchedTemplate.predicateForCurrentState() {
       setFormattingDictionary(on: templateCopy, predicate: predicate)
       templateCopy.setPredicate(predicate)
     }
