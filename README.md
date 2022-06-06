@@ -4,7 +4,7 @@
 
 The plan is to have a 1:1 API implementation so implementing it in cross-platform projects and SwiftUI apps is seamless and requires to be setup only once.
 
-**⚠️ WARNING**: This is a pre-release component, and as such should not be used in release yet. The public API is bound to change.
+**⚠️ WARNING**: This is a pre-release component, and as such should not be used in production software yet. The public API is bound to change.
 
 ### TODO:
  
