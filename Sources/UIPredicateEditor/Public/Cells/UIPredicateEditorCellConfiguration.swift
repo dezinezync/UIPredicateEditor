@@ -11,18 +11,22 @@ import UIKit
 open class UIPredicateEditorCellConfiguration: UIContentConfiguration, Equatable {
   
   public static func == (lhs: UIPredicateEditorCellConfiguration, rhs: UIPredicateEditorCellConfiguration) -> Bool {
-    lhs.rowTemplate == rhs.rowTemplate && lhs.state == rhs.state
+    lhs.rowTemplate == rhs.rowTemplate
+    && lhs.state == rhs.state
+    && lhs.isEditable == rhs.isEditable
   }
   
   internal var state: UICellConfigurationState
+  internal var isEditable: Bool
   
   private(set) weak var rowTemplate: UIPredicateEditorRowTemplate?
   
   weak var delegate: UIPredicateEditorContentRefreshing?
   
-  init(rowTemplate: UIPredicateEditorRowTemplate, traitCollection: UITraitCollection) {
+  init(rowTemplate: UIPredicateEditorRowTemplate, traitCollection: UITraitCollection, isEditable: Bool = true) {
     self.rowTemplate = rowTemplate
     self.state = UICellConfigurationState(traitCollection: traitCollection)
+    self.isEditable = isEditable
   }
   
   public func makeContentView() -> UIView & UIContentView {
@@ -105,6 +109,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     frame.origin.x = horizontalPadding
     
     leftExpressionView.frame = frame
+    updateViewInteractionState(for: leftExpressionView)
     
     lineWidth = frame.maxX
     
@@ -130,6 +135,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     }
     
     operatorView.frame = frame
+    updateViewInteractionState(for: operatorView)
     
     lineWidth = frame.maxX
     
@@ -171,6 +177,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
       }
       
       rightExpressionView.frame = frame
+      updateViewInteractionState(for: rightExpressionView)
       
       lineWidth = frame.maxX
     }
@@ -294,6 +301,17 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     }
     
     setNeedsLayout()
+  }
+  
+  /// Update the user interaction flag on the view/control based on the applied configuration.
+  /// - Parameter view: the view to update the interaction flag on. If it is an instance of ``UIControl``, its `isEnabled` property will be updated instead. 
+  func updateViewInteractionState(for view: UIView) {
+    if let control = view as? UIControl {
+      control.isEnabled = appliedConfiguration?.isEditable ?? true
+    }
+    else{
+      view.isUserInteractionEnabled = appliedConfiguration?.isEditable ?? true
+    }
   }
 }
 

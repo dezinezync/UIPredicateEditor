@@ -43,8 +43,13 @@ open class UIPredicateEditorController: UICollectionViewController {
   /// A Boolean value that determines whether the rule editor is editable.
   ///
   /// The default is `true`.
-  public var isEditable: Bool = true
-  // @TODO: Implementation pending
+  public var isEditable: Bool = true {
+    didSet {
+      if isEditable != oldValue {
+        updateControllerState()
+      }
+    }
+  }
   
   /// The formatting dictionary for the rule editor.
   ///
@@ -150,6 +155,18 @@ open class UIPredicateEditorController: UICollectionViewController {
   }
   
   // MARK: Internal
+  
+  internal func updateControllerState() {
+    guard Thread.isMainThread else {
+      DispatchQueue.main.async {
+        self.updateControllerState()
+      }
+      return
+    }
+    
+    collectionView.reloadItems(at: collectionView.indexPathsForVisibleItems)
+  }
+  
   internal func updatePredicate(for logicalType: NSCompoundPredicate.LogicalType) {
     let predicates = requiredRowTemplates.compactMap { $0.predicate }
     let compoundPredicate = NSCompoundPredicate(
@@ -216,7 +233,11 @@ open class UIPredicateEditorController: UICollectionViewController {
     #endif
     
     if #available(iOS 14.0, *) {
-      let configuration = UIPredicateEditorCellConfiguration(rowTemplate: rowTemplate, traitCollection: cell.traitCollection)
+      let configuration = UIPredicateEditorCellConfiguration(
+        rowTemplate: rowTemplate,
+        traitCollection: cell.traitCollection,
+        isEditable: self.isEditable
+      )
       
       var backgroundConfiguration = UIBackgroundConfiguration.listGroupedCell()
       backgroundConfiguration.backgroundColor = .systemBackground
@@ -323,6 +344,13 @@ extension UIPredicateEditorController {
         view.leadingAnchor.constraint(equalTo: previousViewAnchor, constant: 8.0)
       ])
       
+      if let control = view as? UIControl {
+        control.isEnabled = self.isEditable
+      }
+      else {
+        view.isUserInteractionEnabled = self.isEditable
+      }
+      
       previousViewAnchor = view.trailingAnchor
     }
   }
@@ -364,6 +392,8 @@ extension UIPredicateEditorController {
       title: NSLocalizedString("New", comment: ""),
       children: actions
     )
+    
+    button.isEnabled = self.isEditable
   }
   
   private func addRowTemplate(for leftExpressionTitle: String) {
