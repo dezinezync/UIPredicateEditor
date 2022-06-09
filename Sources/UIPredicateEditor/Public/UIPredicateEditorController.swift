@@ -307,7 +307,7 @@ extension UIPredicateEditorController {
   /// - Parameters:
   ///   - cell: cell to configure views on
   ///   - rowTemplate: the row template to fetch views from 
-  open func configureCompoundTypesCell(_ cell: UIPredicateEditorBaseCell, rowTemplate: UIPredicateEditorRowTemplate) {
+  public func configureCompoundTypesCell(_ cell: UIPredicateEditorBaseCell, rowTemplate: UIPredicateEditorRowTemplate) {
     
     if #available(iOS 14.0, *) {
       var backgroundConfiguration = UIBackgroundConfiguration.listGroupedCell()
@@ -355,7 +355,7 @@ extension UIPredicateEditorController {
     }
   }
   
-  open func configure(footerView: UIPredicateEditorFooterView) {
+  public func configure(footerView: UIPredicateEditorFooterView) {
     guard let button = footerView.button else {
       return
     }
