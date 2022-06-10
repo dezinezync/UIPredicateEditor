@@ -5,6 +5,7 @@
 //  Created by Nikhil Nigade on 02/06/22.
 //
 
+#if canImport(UIKit)
 import UIKit
 
 @available(iOS 14.0, *)
@@ -324,3 +325,4 @@ extension UIPredicateEditorCellContentView: UIPredicateEditorContentRefreshing {
     self.appliedConfiguration.delegate?.refreshContentView()
   }
 }
+#endif

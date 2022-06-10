@@ -5,6 +5,7 @@
 //  Created by Nikhil Nigade on 26/05/22.
 //
 
+#if canImport(UIKit)
 import UIKit
 
 #if canImport(CoreData)
@@ -202,7 +203,7 @@ open class UIPredicateEditorRowTemplate: NSObject {
       views.append(compoundTypesButton)
       
       let label = operatorStaticLabel
-      label.text = NSLocalizedString("of the following are true", comment: "of the following are true")
+      label.text = NSLocalizedString("of the following are true", bundle: .module, comment: "of the following are true")
       
       views.append(label)
     }
@@ -566,7 +567,10 @@ open class UIPredicateEditorRowTemplate: NSObject {
   }()
   
   lazy var boolMenuButton: UIButton = {
-    let menuActions = [NSLocalizedString("Yes", comment: "Yes"), NSLocalizedString("No", comment: "No")].compactMap { bool in
+    let menuActions = [
+      NSLocalizedString("Yes", bundle: .module, comment: "Yes"),
+      NSLocalizedString("No", bundle: .module, comment: "No")
+    ].compactMap { bool in
       UIAction(title: bool) { [weak self] _ in
         #if DEBUG
         print("[UIPredicateEditor] boolean menu action: \(bool)")
@@ -675,3 +679,4 @@ extension UIPredicateEditorRowTemplate {
     return inherit + meta
   }
 }
+#endif

@@ -5,6 +5,7 @@
 //  Created by Nikhil Nigade on 26/05/22.
 //
 
+#if canImport(UIKit)
 import UIKit
 
 public extension Notification.Name {
@@ -280,7 +281,7 @@ open class UIPredicateEditorController: UICollectionViewController {
     guard showContextMenus else { return nil }
     
     let deleteAction = UIAction(
-      title: NSLocalizedString("Delete", comment: ""),
+      title: NSLocalizedString("Delete", bundle: .module, comment: "Delete action under row comments"),
       image: UIImage(systemName: "trash")) { [weak self] _ in
         guard let self = self else { return }
         
@@ -293,7 +294,7 @@ open class UIPredicateEditorController: UICollectionViewController {
     
     return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
       UIMenu(
-        title: NSLocalizedString("Row Actions", comment: ""),
+        title: NSLocalizedString("Row Actions", bundle: .module, comment: "Row Actions for predicate editor row template"),
         children: [deleteAction]
       )
     }
@@ -389,7 +390,7 @@ extension UIPredicateEditorController {
     }.reduce([], +)
     
     button.menu = UIMenu(
-      title: NSLocalizedString("New", comment: ""),
+      title: NSLocalizedString("New", bundle: .module, comment: "New button title"),
       children: actions
     )
     
@@ -513,3 +514,4 @@ extension UIPredicateEditorController: UIPredicateEditorContentRefreshing {
     }
   }
 }
+#endif

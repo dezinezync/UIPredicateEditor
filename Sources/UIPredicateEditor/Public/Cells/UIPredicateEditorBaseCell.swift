@@ -5,6 +5,7 @@
 //  Created by Nikhil Nigade on 31/05/22.
 //
 
+#if canImport(UIKit)
 import UIKit
 
 /// A generic base class for rendering various subpredicates in the `UIPredicateEditor`. 
@@ -39,3 +40,4 @@ extension UIPredicateEditorBaseCell {
     collectionView.register(UIPredicateEditorBaseCell.self, forCellWithReuseIdentifier: UIPredicateEditorBaseCell.identifier)
   }
 }
+#endif

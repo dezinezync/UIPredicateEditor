@@ -5,6 +5,7 @@
 //  Created by Nikhil Nigade on 05/06/22.
 //
 
+#if canImport(UIKit)
 import UIKit
 
 /// Footer view used in the last section of the ``UIPredicateEditor``. This section hosts a center aligned ``UIButton`` which displays a menu of all the left expressions present in the predicate editor. The user may select any one and add a new row to the predicate editor.
@@ -29,7 +30,7 @@ open class UIPredicateEditorFooterView: UICollectionReusableView {
     let button = UIButton()
     button.translatesAutoresizingMaskIntoConstraints = false
     
-    let title = NSLocalizedString("New", comment: "New Row Button Title")
+    let title = NSLocalizedString("New", bundle: .module, comment: "New Row Button Title")
     
     if #available(iOS 15.0, *) {
       var configuration = UIButton.Configuration.tinted()
@@ -73,3 +74,4 @@ extension UIPredicateEditorFooterView {
     collectionView.register(UIPredicateEditorFooterView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: UIPredicateEditorFooterView.identifier)
   }
 }
+#endif

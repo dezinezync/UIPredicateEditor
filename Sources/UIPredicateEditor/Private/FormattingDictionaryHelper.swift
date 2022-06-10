@@ -7,6 +7,7 @@
 
 import Foundation
 
+@available(iOS 13, macOS 10.15, *)
 final class FormattingDictionaryHelper {
   
   private let formattingDictionary: [String: String]

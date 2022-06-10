@@ -5,6 +5,7 @@
 //  Created by Nikhil Nigade on 31/05/22.
 //
 
+#if canImport(UIKit)
 import UIKit
 
 @available(iOS 14, macCatalyst 11, *)
@@ -24,3 +25,4 @@ open class UIPredicateEditorLayout: UICollectionViewCompositionalLayout {
     return .list(using: configuration)
   }
 }
+#endif

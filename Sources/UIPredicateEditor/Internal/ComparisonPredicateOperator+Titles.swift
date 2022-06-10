@@ -23,7 +23,7 @@ extension NSCompoundPredicate.LogicalType {
   
   var localizedTitle: String {
     let title = self.title
-    return NSLocalizedString(title, comment: title)
+    return NSLocalizedString(title, bundle: .module, comment: title)
   }
 }
 
@@ -65,36 +65,36 @@ extension NSComparisonPredicate.Operator {
   
   var localizedTitle: String {
     let title = self.title
-    return NSLocalizedString(title, comment: title)
+    return NSLocalizedString(title, bundle: .module, comment: title)
   }
   
   static func from(_ localizedTitle: String) -> NSComparisonPredicate.Operator {
     switch localizedTitle {
-    case NSLocalizedString("is less than", comment: "less than"):
+    case NSLocalizedString("is less than", bundle: .module, comment: "less than"):
       return .lessThan
-    case NSLocalizedString("is less than or equal to", comment: "less than or equal to"):
+    case NSLocalizedString("is less than or equal to", bundle: .module, comment: "less than or equal to"):
       return .lessThanOrEqualTo
-    case NSLocalizedString("is greater than", comment: "greater than"):
+    case NSLocalizedString("is greater than", bundle: .module, comment: "greater than"):
       return .greaterThan
-    case NSLocalizedString("is greater than or equal to", comment: "greater than or equal to"):
+    case NSLocalizedString("is greater than or equal to", bundle: .module, comment: "greater than or equal to"):
       return .greaterThanOrEqualTo
-    case NSLocalizedString("is", comment: "is"):
+    case NSLocalizedString("is", bundle: .module, comment: "is"):
       return .equalTo
-    case NSLocalizedString("is not", comment: "is not"):
+    case NSLocalizedString("is not", bundle: .module, comment: "is not"):
       return .notEqualTo
-    case NSLocalizedString("matches", comment: "matches"):
+    case NSLocalizedString("matches", bundle: .module, comment: "matches"):
       return .matches
-    case NSLocalizedString("like", comment: "like"):
+    case NSLocalizedString("like", bundle: .module, comment: "like"):
       return .like
-    case NSLocalizedString("begins with", comment: "begins with"):
+    case NSLocalizedString("begins with", bundle: .module, comment: "begins with"):
       return .beginsWith
-    case NSLocalizedString("ends with", comment: "ends with"):
+    case NSLocalizedString("ends with", bundle: .module, comment: "ends with"):
       return .endsWith
-    case NSLocalizedString("in", comment: "in"):
+    case NSLocalizedString("in", bundle: .module, comment: "in"):
       return .in
-    case NSLocalizedString("contains", comment: "contains"):
+    case NSLocalizedString("contains", bundle: .module, comment: "contains"):
       return .contains
-    case NSLocalizedString("between", comment: "between"):
+    case NSLocalizedString("between", bundle: .module, comment: "between"):
       return .between
     default:
       fatalError("Unknown operator")

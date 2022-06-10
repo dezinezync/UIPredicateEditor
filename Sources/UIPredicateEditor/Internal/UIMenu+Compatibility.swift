@@ -5,6 +5,7 @@
 //  Created by Nikhil Nigade on 03/06/22.
 //
 
+#if canImport(UIKit)
 import UIKit
 
 extension UIMenu {
@@ -31,3 +32,4 @@ extension UIMenu {
     }
   }
 }
+#endif
