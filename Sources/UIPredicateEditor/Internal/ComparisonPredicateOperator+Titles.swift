@@ -25,6 +25,24 @@ extension NSCompoundPredicate.LogicalType {
     let title = self.title
     return NSLocalizedString(title, bundle: .module, comment: title)
   }
+  
+  var formattingTitle: String {
+    switch self {
+    case .and:
+      return "and"
+    case .or:
+      return "or"
+    case .not:
+      return "not"
+    @unknown default:
+      fatalError("unknown logical type")
+    }
+  }
+  
+  var localizedFormattingTitle: String {
+    let title = self.formattingTitle
+    return NSLocalizedString(title, bundle: .module, comment: title)
+  }
 }
 
 extension NSComparisonPredicate.Operator {
