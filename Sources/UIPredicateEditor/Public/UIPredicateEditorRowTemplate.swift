@@ -444,7 +444,7 @@ open class UIPredicateEditorRowTemplate: NSObject {
       
       if actions.count == 1 {
         // single value, disable interaction
-        button.isUserInteractionEnabled = false
+        button.isEnabled = false
       }
     }
     else {
@@ -453,6 +453,8 @@ open class UIPredicateEditorRowTemplate: NSObject {
     
     if #available(iOS 15, macCatalyst 12.0, *) {
       button.changesSelectionAsPrimaryAction = true
+      button.showsMenuAsPrimaryAction = actions.count > 1
+      button.isEnabled = actions.count > 1
       
       if actions.count > 1 {
         var config = UIButton.Configuration.gray()
