@@ -1,5 +1,5 @@
 //
-//  UIPredicateEditor.swift
+//  UIPredicateEditorViewController.swift
 //  
 //
 //  Created by Nikhil Nigade on 26/05/22.
@@ -8,38 +8,37 @@
 #if canImport(UIKit)
 import UIKit
 
-public extension Notification.Name {
-  
-  /// Notified when the predicate of the `UIPredicateEditor` changes.
-  ///
-  /// The `object` on the `Notification` will be the editor.
-  static let predicateDidChange = Notification.Name(rawValue: "UIPredicateEditor.predicateDidChange")
-}
-
 public protocol UIPredicateEditorRefreshing: NSObject {
   func reconfigure(_ cell: UIPredicateEditorBaseCell)
 }
 
 /// Concrete view controller for managing and editing predicates in a user interface.
+///
 /// It's `open` by default, encourgaging subclassing, but can be used as is.
 ///
-/// Similar to its `NS` counterpart, it directly queries rows to be displayed based on
-/// its `objectValue`, an instance of `NSPredicate`, and matching rows from `rowTemplates`,
-/// and array of `UIPredicateEditorRowTemplate`.
-open class UIPredicateEditorController: UICollectionViewController {
+/// Similar to its `NS` counterpart, it directly queries rows to be displayed based on its `objectValue`, an instance of `NSPredicate`, and matching rows from `rowTemplates`, and array of `UIPredicateEditorRowTemplate`.
+open class UIPredicateEditorViewController: UICollectionViewController {
+  
+  public let predicateController = PredicateController()
   
   /// contains the predicate evaluated by the editor.
   ///
   /// If one or more parts cannot be queried from the row templates, the property evaluates to `nil`.
   /// Should be set on initialization to pre-populate initial rows.
-  public var predicate: NSPredicate
+  public var predicate: NSPredicate {
+    get { predicateController.predicate }
+    set { predicateController.predicate = newValue }
+  }
   
   /// Row templates to be used by the receiver.
   ///
   /// These should correspond to the predicate the editor is currently editing.
   /// The number of row templates should match the number of options available to the user.
   /// These are never used directly, and instead copies are maintained.
-  public var rowTemplates: [UIPredicateEditorRowTemplate] = []
+  public var rowTemplates: [UIPredicateEditorRowTemplate] {
+    get { predicateController.rowTemplates }
+    set { predicateController.rowTemplates = newValue }
+  }
   
   /// A Boolean value that determines whether the rule editor is editable.
   ///
@@ -55,13 +54,11 @@ open class UIPredicateEditorController: UICollectionViewController {
   /// The formatting dictionary for the rule editor.
   ///
   /// If you assign a new the formatting dictionary to this property, it sets the current to formatting strings file name to `nil`.
-  public var formattingDictionary: [String: String]?
+  public var formattingDictionary: [String: String]? {
+    get { predicateController.formattingDictionary }
+    set { predicateController.formattingDictionary = newValue }
+  }
   
-  /// The name of the rule editor’s strings file.
-  ///
-  /// The `UIPredicateEditor` class looks for a strings file with the given name in the main bundle. If it finds a strings file resource with the given name, `UIPredicateEditor` loads it and sets it as the formatting dictionary for the receiver. You can obtain the resulting dictionary using the `formattingDictionary` property.
-  ///
-  /// If you assign a new dictionary to the `formattingDictionary` property, it sets the current to formatting strings file name to `nil`.
   public var formattingStringsFilename: String?
   // @TODO: Implementation pending
   
@@ -73,7 +70,10 @@ open class UIPredicateEditorController: UICollectionViewController {
   /// Internal copy of row templates, which will be used to populate the collection view.
   ///
   /// Each row will have its own predicate which is used to form the predicate on the `UIPredicateEditor`.
-  private var requiredRowTemplates: [UIPredicateEditorRowTemplate] = []
+  private var requiredRowTemplates: [UIPredicateEditorRowTemplate] {
+    get { predicateController.requiredRowTemplates }
+    set { predicateController.requiredRowTemplates = newValue }
+  }
   
   /// set to `false` once the view appears and the initial predicate is setup.
   private var isLoading: Bool = true
@@ -92,11 +92,11 @@ open class UIPredicateEditorController: UICollectionViewController {
     
     precondition(compoundTypeRow != nil, "The row templates should always include one compound type row")
     
+    super.init(collectionViewLayout: layout)
+    
     self.predicate = predicate
     
     self.rowTemplates = rowTemplates
-    
-    super.init(collectionViewLayout: layout)
   }
   
   public required init?(coder: NSCoder) {
@@ -128,29 +128,7 @@ open class UIPredicateEditorController: UICollectionViewController {
   ///
   /// When predicates of row templates change, this is invoked automatically.
   public func reloadPredicate() {
-    let subpredicates = self.subpredicates
-    
-    let matchingRowTemplates = subpredicates.map { predicate -> UIPredicateEditorRowTemplate in
-      let firstMatch: UIPredicateEditorRowTemplate = rowTemplates.reduce(rowTemplates[0], { partialResult, template in
-        if template.match(for: predicate) > partialResult.match(for: predicate) {
-          return template
-        }
-        
-        return partialResult
-      })
-      
-      // create a copy of the template
-      let templateCopy = firstMatch.copy() as! UIPredicateEditorRowTemplate
-      
-      setFormattingDictionary(on: templateCopy, predicate: predicate)
-      
-      // update the predicate so it can internally update values on its views
-      templateCopy.setPredicate(predicate)
-      
-      return templateCopy
-    }
-    
-    self.requiredRowTemplates = matchingRowTemplates
+    predicateController.reloadPredicate()
     
     collectionView.reloadData()
   }
@@ -166,32 +144,6 @@ open class UIPredicateEditorController: UICollectionViewController {
     }
     
     collectionView.reloadItems(at: collectionView.indexPathsForVisibleItems)
-  }
-  
-  internal func updatePredicate(for logicalType: NSCompoundPredicate.LogicalType) {
-    let predicates = requiredRowTemplates.compactMap { $0.predicate }
-    let compoundPredicate = NSCompoundPredicate(
-      type: logicalType,
-      subpredicates: predicates
-    )
-    
-    self.predicate = compoundPredicate
-    
-    DispatchQueue.main.async {
-      NotificationCenter.default.post(name: .predicateDidChange, object: self)
-    }
-  }
-  
-  internal var subpredicates: [NSPredicate] {
-    if let predicate = predicate as? NSCompoundPredicate {
-      let subpredicates = predicate.subpredicates.compactMap { $0 as? NSPredicate }
-      return subpredicates
-    }
-    else if predicate.predicateFormat.isEmpty {
-      return []
-    }
-    
-    return [predicate]
   }
   
   public override func numberOfSections(in collectionView: UICollectionView) -> Int {
@@ -302,7 +254,7 @@ open class UIPredicateEditorController: UICollectionViewController {
 
 }
 
-extension UIPredicateEditorController {
+extension UIPredicateEditorViewController {
   
   /// Configure the compound type cell from the provided row template
   /// - Parameters:
@@ -384,7 +336,7 @@ extension UIPredicateEditorController {
           print("UIPredicateEditor: footer button: selected expression with title: \(title)")
           #endif
           
-          self?.addRowTemplate(for: title)
+          self?.predicateController.addRowTemplate(for: title)
         }
       }
     }.reduce([], +)
@@ -398,77 +350,14 @@ extension UIPredicateEditorController {
   }
   
   private func addRowTemplate(for leftExpressionTitle: String) {
-    var title = leftExpressionTitle
-    
-    // check if this a localized title
-    if let matchedTitle = formattingHelper.lhsReverseMatch(for: title) {
-      title = matchedTitle
-    }
-    
-    // find the associated row template
-    guard let matchedTemplate = rowTemplates.first(where: { template in
-      template.leftExpressions.first(where: { expression in
-        expression.stringValue == title
-      }) != nil
-    }) else {
-      return
-    }
-    
-    let templateCopy = matchedTemplate.copy() as! UIPredicateEditorRowTemplate
-    
-    if let predicate = matchedTemplate.predicateForCurrentState() {
-      setFormattingDictionary(on: templateCopy, predicate: predicate)
-      templateCopy.setPredicate(predicate)
-    }
-    
-    requiredRowTemplates.append(templateCopy)
-    collectionView.reloadData()
-  }
-  
-  /// check if the formatting dictionary is setup, match localization formats to the predicate. If we get a primary match, extract all partial matches and set it up on the row template
-  /// - Parameters:
-  ///   - rowTemplate: the row template to update
-  ///   - predicate: the predicate to match with
-  private func setFormattingDictionary(on rowTemplate: UIPredicateEditorRowTemplate, predicate: NSPredicate) {
-    if let comparison = predicate as? NSComparisonPredicate,
-       let formattingDictionary = formattingDictionary {
-      
-      let lhsComparison = comparison.leftExpression
-      let rhsComparison = comparison.rightExpression
-      let comparisonOp = comparison.predicateOperatorType
-      
-      if let lhsKey = lhsComparison.stringValue,
-         let rhsKey = rhsComparison.stringValue {
-        
-        let keyToMatch = "%[\(lhsKey)]@ %[\(comparisonOp.title)]@ %[\(rhsKey)]@"
-        
-        if let matchedLocalization = formattingDictionary.first(where: { (key: String, value: String) in
-          key == keyToMatch
-        }) {
-          
-          /// the partial key only matches the left expression. The formatting
-          /// dictionary may have strings for multiple operator and right expression
-          /// combinations. This makes a gross assumption that all partial key matches
-          /// are valid for this row template.
-          let partialKeyToMatch = "%[\(lhsKey)]@"
-          
-          let allPartialMatches = formattingDictionary.filter { (key, value) in
-            return key.contains(partialKeyToMatch)
-          }
-          
-          #if DEBUG
-          print("[UIPredicateEditor] localization matches for predicate: \(comparison), firstMatch: \(matchedLocalization), all partial matches: \(allPartialMatches)")
-          #endif
-          
-          rowTemplate.formattingDictionary = allPartialMatches
-        }
-      }
+    if predicateController.addRowTemplate(for: leftExpressionTitle) {
+      collectionView.reloadData()
     }
   }
 }
 
 // MARK: - UIPredicateEditorRefreshing
-extension UIPredicateEditorController: UIPredicateEditorRefreshing {
+extension UIPredicateEditorViewController: UIPredicateEditorRefreshing {
   public func reconfigure(_ cell: UIPredicateEditorBaseCell) {
     
     guard !isLoading else {
@@ -491,7 +380,7 @@ extension UIPredicateEditorController: UIPredicateEditorRefreshing {
 }
 
 // MARK: - UIPredicateEditorContentRefreshing
-extension UIPredicateEditorController: UIPredicateEditorContentRefreshing {
+extension UIPredicateEditorViewController: UIPredicateEditorContentRefreshing {
   public func refreshContentView() {
     
     if #available(iOS 14.0, macCatalyst 11.0, *) {
@@ -503,13 +392,13 @@ extension UIPredicateEditorController: UIPredicateEditorContentRefreshing {
       }
       
       if action.title == NSCompoundPredicate.LogicalType.or.localizedTitle {
-        updatePredicate(for: .or)
+        predicateController.updatePredicate(for: .or)
       }
       else if action.title == NSCompoundPredicate.LogicalType.not.localizedTitle {
-        updatePredicate(for: .not)
+        predicateController.updatePredicate(for: .not)
       }
       else {
-        updatePredicate(for: .and)
+        predicateController.updatePredicate(for: .and)
       }
     }
   }
