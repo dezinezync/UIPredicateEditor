@@ -15,6 +15,7 @@ open class UIPredicateEditorCellConfiguration: UIContentConfiguration, Equatable
     lhs.rowTemplate == rhs.rowTemplate
     && lhs.state == rhs.state
     && lhs.isEditable == rhs.isEditable
+    && lhs.indentationLevel == rhs.indentationLevel
   }
   
   internal var state: UICellConfigurationState
@@ -24,10 +25,13 @@ open class UIPredicateEditorCellConfiguration: UIContentConfiguration, Equatable
   
   weak var delegate: UIPredicateEditorContentRefreshing?
   
-  init(rowTemplate: UIPredicateEditorRowTemplate, traitCollection: UITraitCollection, isEditable: Bool = true) {
+  var indentationLevel: Int
+  
+  init(rowTemplate: UIPredicateEditorRowTemplate, traitCollection: UITraitCollection, isEditable: Bool = true, indentationLevel: Int) {
     self.rowTemplate = rowTemplate
     self.state = UICellConfigurationState(traitCollection: traitCollection)
     self.isEditable = isEditable
+    self.indentationLevel = indentationLevel
   }
   
   public func makeContentView() -> UIView & UIContentView {
@@ -63,6 +67,13 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
   
   /// vertical padding between the content view and the items
   var verticalPadding: CGFloat { 8.0 }
+  
+  var indentationWidth: CGFloat { 12.0 }
+  
+  /// the leading padding applied to views based on the indentation level of the configuration.
+  var leadingPadding: CGFloat {
+    CGFloat((appliedConfiguration.indentationLevel + 1)) * indentationWidth
+  }
   
   public var configuration: UIContentConfiguration {
     get { appliedConfiguration }
@@ -107,7 +118,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     frame = leftExpressionView.frame
     frame.size = leftExpressionView.intrinsicContentSize
     frame.origin.y = verticalPadding
-    frame.origin.x = horizontalPadding
+    frame.origin.x = leadingPadding
     
     leftExpressionView.frame = frame
     updateViewInteractionState(for: leftExpressionView)
@@ -116,7 +127,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     
     operatorView.sizeToFit()
     
-    if (lineWidth + horizontalPadding + operatorView.intrinsicContentSize.width) > (cellBounds.width - (horizontalPadding * 2)) {
+    if (lineWidth + horizontalPadding + operatorView.intrinsicContentSize.width) > (cellBounds.width - (leadingPadding + horizontalPadding)) {
       // move it to the next line
       var tempFrame = operatorView.frame
       tempFrame.origin.y = frame.maxY + interItemVerticalPadding
@@ -129,7 +140,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     
     frame = operatorView.frame
     frame.size = operatorView.intrinsicContentSize
-    frame.origin.x = lineWidth + horizontalPadding
+    frame.origin.x = lineWidth > 0 ? (lineWidth + horizontalPadding) : leadingPadding
     
     if lineWidth != 0.0 {
       frame.origin.y = verticalPadding
@@ -158,7 +169,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
       }
       
       // include leading and trailing padding 
-      if (lineWidth + (horizontalPadding * 2.0) + rightExpressionViewSize.width) > (cellBounds.width - (horizontalPadding * 2)) {
+      if (lineWidth + (leadingPadding + horizontalPadding) + rightExpressionViewSize.width) > (cellBounds.width - (leadingPadding + horizontalPadding)) {
         // move it to the next line
         var tempFrame = rightExpressionView.frame
         tempFrame.origin.y = frame.maxY + interItemVerticalPadding
@@ -171,7 +182,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
       
       frame = rightExpressionView.frame
       frame.size = rightExpressionViewSize
-      frame.origin.x = lineWidth + horizontalPadding
+      frame.origin.x = lineWidth > 0 ? (lineWidth + horizontalPadding) : leadingPadding
       
       if lineWidth != 0.0 {
         frame.origin.y = verticalPadding
@@ -185,7 +196,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     
     // if all views fit within the line
     // center them vertically in the content view
-    if lines == 1, lineWidth <= (cellBounds.width - (horizontalPadding * 2.0)) {
+    if lines == 1, lineWidth <= (cellBounds.width - (leadingPadding + horizontalPadding)) {
       for view: UIView? in [leftExpressionView, operatorView, rightExpressionView] {
         if let view = view {
           var frame = view.frame

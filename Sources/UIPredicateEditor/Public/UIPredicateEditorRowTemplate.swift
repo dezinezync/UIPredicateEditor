@@ -61,6 +61,9 @@ open class UIPredicateEditorRowTemplate: NSObject {
     return FormattingDictionaryHelper(formattingDictionary: formattingDictionary)
   }()
   
+  /// For values greater than zero, the row should be indented in the presenting view. Values lower than 0 should be treated by 0.
+  public var indentationLevel: Int = 0
+  
   /// Initializes and returns a “pop-up-pop-up-pop-up”–style row template.
   /// - Parameters:
   ///   - leftExpressions: An array of ``NSExpression`` objects that represent the left side of a predicate.

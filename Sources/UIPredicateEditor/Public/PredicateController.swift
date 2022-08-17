@@ -91,7 +91,7 @@ public final class PredicateController {
           }
           
           #if DEBUG
-          print("[UIPredicateEditor] localization matches for predicate: \(comparison), firstMatch: \(matchedLocalization), all partial matches: \(allPartialMatches)")
+          print("PredicateController: localization matches for predicate: \(comparison), firstMatch: \(matchedLocalization), all partial matches: \(allPartialMatches)")
           #endif
           
           rowTemplate.formattingDictionary = allPartialMatches
@@ -108,27 +108,11 @@ public final class PredicateController {
   public func reloadPredicate() {
     let subpredicates = self.subpredicates
     
-    let matchingRowTemplates = subpredicates.map { predicate -> UIPredicateEditorRowTemplate in
-      let firstMatch: UIPredicateEditorRowTemplate = rowTemplates.reduce(rowTemplates[0], { partialResult, template in
-        if template.match(for: predicate) > partialResult.match(for: predicate) {
-          return template
-        }
-        
-        return partialResult
-      })
-      
-      // create a copy of the template
-      let templateCopy = firstMatch.copy() as! UIPredicateEditorRowTemplate
-      
-      setFormattingDictionary(on: templateCopy, predicate: predicate)
-      
-      // update the predicate so it can internally update values on its views
-      templateCopy.setPredicate(predicate)
-      
-      return templateCopy
+    let matchingRowTemplates = subpredicates.map { predicate -> [UIPredicateEditorRowTemplate] in
+      rowTemplates(for: predicate)
     }
     
-    self.requiredRowTemplates = matchingRowTemplates
+    self.requiredRowTemplates = Array(matchingRowTemplates.joined())
   }
   
   /// Notifies the receiver that the logical type for its predicate has changed.
@@ -185,14 +169,71 @@ public final class PredicateController {
   
   // MARK: Internal
   internal var subpredicates: [NSPredicate] {
+    subpredicates(for: predicate)
+  }
+  
+  private func subpredicates(for predicate: NSPredicate) -> [NSPredicate] {
     if let predicate = predicate as? NSCompoundPredicate {
-      let subpredicates = predicate.subpredicates.compactMap { $0 as? NSPredicate }
-      return subpredicates
+      return predicate.subpredicates.compactMap { $0 as? NSPredicate }
     }
     else if predicate.predicateFormat.isEmpty {
       return []
     }
     
     return [predicate]
+  }
+  
+  private func rowTemplates(for predicate: NSPredicate, indentationLevel: Int = 0) -> [UIPredicateEditorRowTemplate] {
+    if let compoundPredicate = predicate as? NSCompoundPredicate {
+      var templates: [UIPredicateEditorRowTemplate] = []
+      
+      guard let operatorTemplate: UIPredicateEditorRowTemplate = rowTemplates.reduce(nil, { partialResult, template in
+        if template.match(for: predicate) > partialResult?.match(for: predicate) ?? 0 {
+          return template
+        }
+        
+        return partialResult
+      }) else {
+        return []
+      }
+      
+      let operatorTemplateCopy = operatorTemplate.copy() as! UIPredicateEditorRowTemplate
+      
+      if indentationLevel > 0 {
+        operatorTemplateCopy.indentationLevel = indentationLevel - 1
+      }
+      
+      templates.append(operatorTemplateCopy)
+      
+      compoundPredicate.subpredicates.forEach { subpredicate in
+        let subTemplates = self.rowTemplates(for: subpredicate as! NSPredicate, indentationLevel: indentationLevel + 1)
+        if !subTemplates.isEmpty {
+          templates.append(contentsOf: subTemplates)
+        }
+      }
+      
+      return templates
+    }
+    
+    guard let firstMatch: UIPredicateEditorRowTemplate = rowTemplates.reduce(nil, { partialResult, template in
+      if template.match(for: predicate) > partialResult?.match(for: predicate) ?? 0 {
+        return template
+      }
+      
+      return partialResult
+    }) else {
+      return []
+    }
+    
+    // create a copy of the template
+    let templateCopy = firstMatch.copy() as! UIPredicateEditorRowTemplate
+    
+    setFormattingDictionary(on: templateCopy, predicate: predicate)
+    
+    // update the predicate so it can internally update values on its views
+    templateCopy.setPredicate(predicate)
+    templateCopy.indentationLevel = indentationLevel
+    
+    return [templateCopy]
   }
 }

@@ -182,14 +182,15 @@ open class UIPredicateEditorViewController: UICollectionViewController {
     let rowTemplate = requiredRowTemplates[indexPath.item]
     
     #if DEBUG
-    print("UIPredicateEditor: will use template: \(rowTemplate) for index: \(indexPath.item)")
+    print("UIPredicateEditorViewController: will use template: \(rowTemplate) for index: \(indexPath.item)")
     #endif
     
     if #available(iOS 14.0, *) {
       let configuration = UIPredicateEditorCellConfiguration(
         rowTemplate: rowTemplate,
         traitCollection: cell.traitCollection,
-        isEditable: self.isEditable
+        isEditable: self.isEditable,
+        indentationLevel: rowTemplate.indentationLevel
       )
       
       var backgroundConfiguration = UIBackgroundConfiguration.listGroupedCell()
@@ -333,7 +334,7 @@ extension UIPredicateEditorViewController {
       }.map { title in
         UIAction(title: title) { [weak self] _ in
           #if DEBUG
-          print("UIPredicateEditor: footer button: selected expression with title: \(title)")
+          print("UIPredicateEditorViewController: footer button: selected expression with title: \(title)")
           #endif
           
           self?.predicateController.addRowTemplate(for: title)
@@ -386,6 +387,7 @@ extension UIPredicateEditorViewController: UIPredicateEditorContentRefreshing {
     if #available(iOS 14.0, macCatalyst 11.0, *) {
       // only called for the compund type predicate
       guard let cell = collectionView.cellForItem(at: IndexPath(item: 0, section: 0)),
+            !cell.contentView.subviews.isEmpty,
             let button = cell.contentView.subviews[0] as? UIButton,
             let action = button.menu?.uiSelectedElements.first as? UIAction else {
         return
