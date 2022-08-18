@@ -12,7 +12,7 @@ extension UIMenu {
   
   /// iOS 14 compatibility method for fetching selected menu items
   var uiSelectedElements: [UIMenuElement] {
-    if #available(iOS 15, macCatalyst 12.0, *) {
+    if #available(iOS 15, macCatalyst 15.0, *) {
       return selectedElements
     }
     else {

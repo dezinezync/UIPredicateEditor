@@ -312,7 +312,7 @@ extension UIPredicateEditorViewController {
       return
     }
     
-    guard #available(iOS 14, macCatalyst 11.0, *) else {
+    guard #available(iOS 14, macCatalyst 14.0, *) else {
       return
     }
     
@@ -367,7 +367,7 @@ extension UIPredicateEditorViewController: UIPredicateEditorRefreshing {
       return
     }
     
-    if #available(iOS 15, macCatalyst 12.0, *) {
+    if #available(iOS 15, macCatalyst 15.0, *) {
       collectionView.reconfigureItems(at: [indexPath])
     }
     else {
@@ -382,7 +382,7 @@ extension UIPredicateEditorViewController: UIPredicateEditorRefreshing {
 extension UIPredicateEditorViewController: UIPredicateEditorContentRefreshing {
   public func refreshContentView() {
     
-    if #available(iOS 14.0, macCatalyst 11.0, *) {
+    if #available(iOS 14.0, macCatalyst 14.0, *) {
       // only called for the compund type predicate
       guard let cell = collectionView.cellForItem(at: IndexPath(item: 0, section: 0)),
             !cell.contentView.subviews.isEmpty,

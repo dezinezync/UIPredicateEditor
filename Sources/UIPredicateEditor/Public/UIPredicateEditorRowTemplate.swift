@@ -61,8 +61,20 @@ open class UIPredicateEditorRowTemplate: NSObject {
     return FormattingDictionaryHelper(formattingDictionary: formattingDictionary)
   }()
   
+  // MARK: Relationships
+  
+  /// the unique ID of this template. Only set to a non-nil value when it is a parent template row associated with child rows. 
+  public var ID: UUID?
+  
   /// For values greater than zero, the row should be indented in the presenting view. Values lower than 0 should be treated by 0.
   public var indentationLevel: Int = 0
+  
+  /// wehn the row template is setup as a sub-predicate of a ``NSCompoundPredicate``, this ID will match the value of the parent template row.
+  ///
+  /// The ID will be common across all siblings. The parent will always point to an ``NSComparisonPredicate``.
+  public var parentTemplateID: UUID?
+  
+  // MARK: Initializers
   
   /// Initializes and returns a “pop-up-pop-up-pop-up”–style row template.
   /// - Parameters:
@@ -290,22 +302,28 @@ open class UIPredicateEditorRowTemplate: NSObject {
     self.predicate = comparisonPredicate
   }
   
+  @available(iOS 14, macCatalyst 14.0, *) public func logicalTypeForCurrentState() -> NSCompoundPredicate.LogicalType {
+    if let selected = self.compoundTypesButton.menu?.uiSelectedElements.first as? UIAction {
+      if selected.title == NSCompoundPredicate.LogicalType.and.localizedTitle {
+        return .and
+      }
+      else if selected.title == NSCompoundPredicate.LogicalType.or.localizedTitle {
+        return .or
+      }
+      else if selected.title == NSCompoundPredicate.LogicalType.not.localizedTitle {
+        return .not
+      }
+    }
+    
+    return .and
+  }
+  
   /// Returns the predicate evaluated from the current state of its views
   /// - Returns: `NSComparisonPredicate` if one could be formed
   public func predicateForCurrentState() -> NSComparisonPredicate? {
     if !self.compoundTypes.isEmpty {
-      if #available(iOS 14, macCatalyst 11.0, *) {
-        if let selected = self.compoundTypesButton.menu?.uiSelectedElements.first as? UIAction {
-          if selected.title == NSCompoundPredicate.LogicalType.and.localizedTitle {
-            self.predicate = NSCompoundPredicate(type: .and, subpredicates: [])
-          }
-          else if selected.title == NSCompoundPredicate.LogicalType.or.localizedTitle {
-            self.predicate = NSCompoundPredicate(type: .or, subpredicates: [])
-          }
-          else if selected.title == NSCompoundPredicate.LogicalType.and.localizedTitle {
-            self.predicate = NSCompoundPredicate(type: .not, subpredicates: [])
-          }
-        }
+      if #available(iOS 14, macCatalyst 14.0, *) {
+        self.predicate = NSCompoundPredicate(type: logicalTypeForCurrentState(), subpredicates: [])
       }
       
       return nil
@@ -319,7 +337,7 @@ open class UIPredicateEditorRowTemplate: NSObject {
     let views = templateViews
     let leftExpressionView = views[0]
     
-    if #available(iOS 14, macCatalyst 11.0, *) {
+    if #available(iOS 14, macCatalyst 14.0, *) {
       if let button = leftExpressionView as? UIButton,
          let item = button.menu?.uiSelectedElements.first as? UIAction {
         
@@ -454,7 +472,7 @@ open class UIPredicateEditorRowTemplate: NSObject {
       // fallback for older versions
     }
     
-    if #available(iOS 15, macCatalyst 12.0, *) {
+    if #available(iOS 15, macCatalyst 15.0, *) {
       button.changesSelectionAsPrimaryAction = true
       button.showsMenuAsPrimaryAction = actions.count > 1
       button.isEnabled = actions.count > 1

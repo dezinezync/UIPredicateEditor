@@ -52,7 +52,7 @@ public final class PredicateController {
   /// Each row will have its own predicate which is used to form the predicate on the `UIPredicateEditor`.
   @objc dynamic public var requiredRowTemplates: [UIPredicateEditorRowTemplate] = []
   
-  /// this is created on-demand everytime as the formatting dictionary may change during runtime
+  /// Created on-demand everytime as the formatting dictionary may change during runtime
   internal var formattingHelper: FormattingDictionaryHelper {
     FormattingDictionaryHelper(formattingDictionary: formattingDictionary ?? [:])
   }
@@ -80,10 +80,10 @@ public final class PredicateController {
           key == keyToMatch
         }) {
           
-          /// the partial key only matches the left expression. The formatting
-          /// dictionary may have strings for multiple operator and right expression
-          /// combinations. This makes a gross assumption that all partial key matches
-          /// are valid for this row template.
+          // the partial key only matches the left expression. The formatting
+          // dictionary may have strings for multiple operators and right expression
+          // combinations. This makes a gross assumption that all partial key matches
+          // are valid for this row template.
           let partialKeyToMatch = "%[\(lhsKey)]@"
           
           let allPartialMatches = formattingDictionary.filter { (key, value) in
@@ -120,7 +120,52 @@ public final class PredicateController {
   /// The receiver internally updates the derived predicate and notifies subscribers.
   /// - Parameter logicalType: logical type of the predicate.
   public func updatePredicate(for logicalType: NSCompoundPredicate.LogicalType) {
-    let predicates = requiredRowTemplates.compactMap { $0.predicate }
+    
+    // list of predicates forming the final compound predicate.
+    // this may contain a mix of normal and compound predicates.
+    var predicates: [NSPredicate] = []
+    
+    let upperIndex = requiredRowTemplates.count
+    var index: Int = 0
+    
+    while (index < upperIndex) {
+      defer { index += 1 }
+      
+      let template = requiredRowTemplates[index]
+      
+      // top level row, use its predicate as-is
+      if template.ID == nil, let predicate = template.predicate {
+        predicates.append(predicate)
+        continue
+      }
+      
+      if #available(iOS 14.0, macCatalyst 14.0, *) {
+        if let uid = template.ID {
+          let logicalType = template.logicalTypeForCurrentState()
+          
+          // assemble all child templates matching the parent's ID
+          // and use their predicates as the subpredicates for the
+          // compound predicate formed by this set.
+          var childTemplates: [UIPredicateEditorRowTemplate] = []
+          for subTemplate in requiredRowTemplates[index...] {
+            if subTemplate.parentTemplateID != uid {
+              continue
+            }
+            
+            childTemplates.append(subTemplate)
+            
+            // increment the counter as we no longer need to process this row
+            index += 1
+          }
+          
+          let subPredicates = childTemplates.compactMap { $0.predicate }
+          let compoundPredicate = NSCompoundPredicate(type: logicalType, subpredicates: subPredicates)
+          
+          predicates.append(compoundPredicate)
+        }
+      }
+    }
+    
     let compoundPredicate = NSCompoundPredicate(
       type: logicalType,
       subpredicates: predicates
@@ -185,6 +230,10 @@ public final class PredicateController {
   
   private func rowTemplates(for predicate: NSPredicate, indentationLevel: Int = 0) -> [UIPredicateEditorRowTemplate] {
     if let compoundPredicate = predicate as? NSCompoundPredicate {
+      // for compound predicates, break down into sub-predicates
+      // with each subpredicate assigned to its own row-template
+      // all "contained" by a single parent operator row-template.
+      
       var templates: [UIPredicateEditorRowTemplate] = []
       
       guard let operatorTemplate: UIPredicateEditorRowTemplate = rowTemplates.reduce(nil, { partialResult, template in
@@ -198,6 +247,7 @@ public final class PredicateController {
       }
       
       let operatorTemplateCopy = operatorTemplate.copy() as! UIPredicateEditorRowTemplate
+      operatorTemplateCopy.ID = UUID()
       
       if indentationLevel > 0 {
         operatorTemplateCopy.indentationLevel = indentationLevel - 1
@@ -208,6 +258,11 @@ public final class PredicateController {
       compoundPredicate.subpredicates.forEach { subpredicate in
         let subTemplates = self.rowTemplates(for: subpredicate as! NSPredicate, indentationLevel: indentationLevel + 1)
         if !subTemplates.isEmpty {
+          // assign the parent's ID to all sub-template rows
+          subTemplates.forEach {
+            $0.parentTemplateID = operatorTemplateCopy.ID
+          }
+          
           templates.append(contentsOf: subTemplates)
         }
       }

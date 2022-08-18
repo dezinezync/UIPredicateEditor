@@ -8,7 +8,7 @@
 #if canImport(UIKit)
 import UIKit
 
-@available(iOS 14, macCatalyst 11, *)
+@available(iOS 14, macCatalyst 14, *)
 open class UIPredicateEditorLayout: UICollectionViewCompositionalLayout {
   
   /// Creates a prepared layout for using with the `UIPredicateEditor`.
