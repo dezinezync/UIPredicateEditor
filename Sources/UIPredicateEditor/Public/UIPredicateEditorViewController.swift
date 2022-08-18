@@ -292,8 +292,6 @@ extension UIPredicateEditorViewController {
       view.translatesAutoresizingMaskIntoConstraints = false
       
       NSLayoutConstraint.activate([
-        view.widthAnchor.constraint(greaterThanOrEqualToConstant: view.frame.width),
-        view.heightAnchor.constraint(equalToConstant: view.frame.height),
         view.centerYAnchor.constraint(equalTo: cell.contentView.centerYAnchor),
         view.leadingAnchor.constraint(equalTo: previousViewAnchor, constant: 8.0)
       ])
