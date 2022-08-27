@@ -5,6 +5,7 @@
 //  Created by Nikhil Nigade on 17/08/22.
 //
 
+#if canImport(UIKit)
 import Foundation
 
 public extension Notification.Name {
@@ -292,3 +293,4 @@ public final class PredicateController {
     return [templateCopy]
   }
 }
+#endif
