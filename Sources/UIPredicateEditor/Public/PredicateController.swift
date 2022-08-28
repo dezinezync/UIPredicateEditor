@@ -184,7 +184,7 @@ public final class PredicateController {
   /// The expression title may be a localized variant, corresponding to a label in the formatting dictionary.
   /// - Parameter leftExpressionTitle: the LHS expression title to look up
   /// - Returns: `true` if the row template was found and added, `false` otherwise.
-  @discardableResult public func addRowTemplate(for leftExpressionTitle: String) -> Bool {
+  @discardableResult public func addRowTemplate(for leftExpressionTitle: String, for parentRow: UIPredicateEditorRowTemplate? = nil) -> Bool {
     var title = leftExpressionTitle
     
     // check if this a localized title
@@ -203,6 +203,11 @@ public final class PredicateController {
     
     let templateCopy = matchedTemplate.copy() as! UIPredicateEditorRowTemplate
     
+    if let parentRow = parentRow {
+      templateCopy.parentTemplateID = parentRow.ID
+      templateCopy.indentationLevel = parentRow.indentationLevel + 1
+    }
+    
     if let predicate = matchedTemplate.predicateForCurrentState() {
       setFormattingDictionary(on: templateCopy, predicate: predicate)
       templateCopy.setPredicate(predicate)
@@ -211,6 +216,24 @@ public final class PredicateController {
     requiredRowTemplates.append(templateCopy)
     
     return true
+  }
+  
+  /// Deletes the row template at the specified index.
+  ///
+  /// If the row template is a Parent row, all its child row templates are also deleted.
+  ///
+  /// Call `updatePredicate(for:)` to update the predicate after deleting a row.
+  /// - Parameter index: the index of the row template
+  public func deleteRowTemplate(at index: Int) {
+    guard index < requiredRowTemplates.count else {
+      return
+    }
+    
+    let rowTemplate = requiredRowTemplates.remove(at: index)
+    if let templateID = rowTemplate.ID {
+      // also remove all child rows associated with this template
+      requiredRowTemplates = requiredRowTemplates.filter { $0.parentTemplateID != templateID }
+    }
   }
   
   // MARK: Internal

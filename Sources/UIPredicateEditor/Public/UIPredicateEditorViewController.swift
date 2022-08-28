@@ -235,20 +235,36 @@ open class UIPredicateEditorViewController: UICollectionViewController {
     
     let deleteAction = UIAction(
       title: NSLocalizedString("Delete", bundle: .module, comment: "Delete action under row comments"),
-      image: UIImage(systemName: "trash")) { [weak self] _ in
+      image: UIImage(systemName: "trash"),
+      attributes: .destructive) { [weak self] _ in
         guard let self = self else { return }
         
         let index = indexPath.item
-        _ = self.requiredRowTemplates.remove(at: index)
+        
+        self.predicateController.deleteRowTemplate(at: index)
+        self.refreshContentView()
         
         self.refreshContentView()
         self.collectionView.reloadData()
       }
     
+    var additionalActions: [UIMenuElement] = []
+    
+    if requiredRowTemplates[indexPath.item].ID != nil {
+      // parent row, allow adding sub-rows
+      let addSubMenu = UIMenu(
+        title: NSLocalizedString("Add Filter", comment: ""),
+        image: UIImage(systemName: "text.append"),
+        children: newRowMenuActions(for: requiredRowTemplates[indexPath.item])
+      )
+      
+      additionalActions.append(addSubMenu)
+    }
+    
     return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
       UIMenu(
         title: NSLocalizedString("Row Actions", bundle: .module, comment: "Row Actions for predicate editor row template"),
-        children: [deleteAction]
+        children: additionalActions + [deleteAction]
       )
     }
   }
@@ -312,13 +328,24 @@ extension UIPredicateEditorViewController {
       return
     }
     
-    guard #available(iOS 14, macCatalyst 14.0, *) else {
-      return
-    }
+    button.menu = UIMenu(
+      title: NSLocalizedString("New", bundle: .module, comment: "New button title"),
+      children: newRowMenuActions()
+    )
     
+    button.isEnabled = self.isEditable
+  }
+  
+  private func addRowTemplate(for leftExpressionTitle: String, parentRowTemplate: UIPredicateEditorRowTemplate? = nil) {
+    if predicateController.addRowTemplate(for: leftExpressionTitle, for: parentRowTemplate) {
+      collectionView.reloadData()
+    }
+  }
+  
+  private func newRowMenuActions(for parentRowTemplate: UIPredicateEditorRowTemplate? = nil) -> [UIMenuElement] {
     let formattingHelper = self.formattingHelper
     
-    let actions: [UIMenuElement] = self.rowTemplates.map { template in
+    var actions: [UIMenuElement] = self.rowTemplates.map { template in
       template.leftExpressions.compactMap { expression in
         guard let stringValue = expression.stringValue else {
           return nil
@@ -332,33 +359,36 @@ extension UIPredicateEditorViewController {
       }.map { title in
         UIAction(title: title) { [weak self] _ in
           #if DEBUG
-          print("UIPredicateEditorViewController: footer button: selected expression with title: \(title)")
+          print("UIPredicateEditorViewController: new menu: selected expression with title: \(title)")
           #endif
           
-          self?.predicateController.addRowTemplate(for: title)
+          self?.addRowTemplate(for: title, parentRowTemplate: parentRowTemplate)
         }
       }
     }.reduce([], +)
     
-    button.menu = UIMenu(
-      title: NSLocalizedString("New", bundle: .module, comment: "New button title"),
-      children: actions
-    )
-    
-    button.isEnabled = self.isEditable
-  }
-  
-  private func addRowTemplate(for leftExpressionTitle: String) {
-    if predicateController.addRowTemplate(for: leftExpressionTitle) {
-      collectionView.reloadData()
+    if parentRowTemplate == nil {
+      // allow adding a new combo row
+      let comboAction = UIAction(
+        title: NSLocalizedString("Combination", comment: "")) { [weak self] _ in
+          #if DEBUG
+          print("UIPredicateEditorViewController: footer menu: adding a new combination row")
+          #endif
+          guard let self = self else { return }
+          
+          // @TODO: Add a new combo row with a child row
+        }
+      
+      actions.append(comboAction)
     }
+    
+    return actions
   }
 }
 
 // MARK: - UIPredicateEditorRefreshing
 extension UIPredicateEditorViewController: UIPredicateEditorRefreshing {
   public func reconfigure(_ cell: UIPredicateEditorBaseCell) {
-    
     guard !isLoading else {
       return
     }
@@ -380,26 +410,25 @@ extension UIPredicateEditorViewController: UIPredicateEditorRefreshing {
 
 // MARK: - UIPredicateEditorContentRefreshing
 extension UIPredicateEditorViewController: UIPredicateEditorContentRefreshing {
+  
+  /// refresh the predicate and thereby the controller's view
   public func refreshContentView() {
+    // only called for the compund type predicate
+    guard let cell = collectionView.cellForItem(at: IndexPath(item: 0, section: 0)),
+          !cell.contentView.subviews.isEmpty,
+          let button = cell.contentView.subviews[0] as? UIButton,
+          let action = button.menu?.uiSelectedElements.first as? UIAction else {
+      return
+    }
     
-    if #available(iOS 14.0, macCatalyst 14.0, *) {
-      // only called for the compund type predicate
-      guard let cell = collectionView.cellForItem(at: IndexPath(item: 0, section: 0)),
-            !cell.contentView.subviews.isEmpty,
-            let button = cell.contentView.subviews[0] as? UIButton,
-            let action = button.menu?.uiSelectedElements.first as? UIAction else {
-        return
-      }
-      
-      if action.title == NSCompoundPredicate.LogicalType.or.localizedTitle {
-        predicateController.updatePredicate(for: .or)
-      }
-      else if action.title == NSCompoundPredicate.LogicalType.not.localizedTitle {
-        predicateController.updatePredicate(for: .not)
-      }
-      else {
-        predicateController.updatePredicate(for: .and)
-      }
+    if action.title == NSCompoundPredicate.LogicalType.or.localizedTitle {
+      predicateController.updatePredicate(for: .or)
+    }
+    else if action.title == NSCompoundPredicate.LogicalType.not.localizedTitle {
+      predicateController.updatePredicate(for: .not)
+    }
+    else {
+      predicateController.updatePredicate(for: .and)
     }
   }
 }
