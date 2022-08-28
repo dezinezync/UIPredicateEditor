@@ -66,7 +66,7 @@ open class UIPredicateEditorRowTemplate: NSObject {
   /// the unique ID of this template. Only set to a non-nil value when it is a parent template row associated with child rows. 
   public var ID: UUID?
   
-  /// For values greater than zero, the row should be indented in the presenting view. Values lower than 0 should be treated by 0.
+  /// For values greater than zero, the row should be indented in the presenting view. Values lower than 0 should be treated as 0.
   public var indentationLevel: Int = 0
   
   /// wehn the row template is setup as a sub-predicate of a ``NSCompoundPredicate``, this ID will match the value of the parent template row.
@@ -146,6 +146,8 @@ open class UIPredicateEditorRowTemplate: NSObject {
     self.options = reference.options
     self.logicalType = reference.logicalType
     self.compoundTypes = reference.compoundTypes
+    self.ID = reference.ID
+    self.parentTemplateID = reference.parentTemplateID
     super.init()
   }
   
@@ -697,7 +699,7 @@ extension UIPredicateEditorRowTemplate: UITextFieldDelegate {
 extension UIPredicateEditorRowTemplate {
   open override var description: String {
     let inherit = super.description
-    let meta = ", predicate: \(self.predicate?.predicateFormat ?? "no predicate"), view count: \(templateViews.count)"
+    let meta = ", predicate: \(self.predicate?.predicateFormat ?? "no predicate"), view count: \(templateViews.count), ID: \(String(describing: ID)), parentID: \(String(describing: parentTemplateID))"
     
     return inherit + meta
   }
