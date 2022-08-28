@@ -283,6 +283,9 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
       addSubview(contentView)
       self.contentView = contentView
     }
+    else {
+      contentView.subviews.forEach { $0.removeFromSuperview() }
+    }
     
     let rowViews = appliedConfiguration.rowTemplate?.templateViews ?? []
     precondition(rowViews.count >= 2, "Expected atleast 2 views.")
