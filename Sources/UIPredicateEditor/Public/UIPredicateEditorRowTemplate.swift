@@ -384,7 +384,7 @@ open class UIPredicateEditorRowTemplate: NSObject {
         else if let textField = rightExpressionView as? UITextField {
           
           if textField.keyboardType == .URL,
-          let url = URL(string: textField.text ?? "") {
+             let url = URL(string: textField.text ?? "") {
             rightExpression = NSExpression(forConstantValue: url)
           }
           else if textField.keyboardType == .numbersAndPunctuation {
@@ -402,12 +402,18 @@ open class UIPredicateEditorRowTemplate: NSObject {
             else if rightExpressionAttributeType == .integer64AttributeType {
               rightExpression = NSExpression(forConstantValue: text.integerValue)
             }
+            else if rightExpressionAttributeType == .stringAttributeType {
+              rightExpression = NSExpression(forConstantValue: text as String)
+            }
             /*
              * Use the following template to handle additional cases
              else if rightExpressionAttributeType == <#type#> {
                rightExpression = NSExpression(forConstantValue: text.<#valueType#>)
              }
              */
+          }
+          else {
+            rightExpression = NSExpression(forConstantValue: textField.text ?? "")
           }
         }
         else if let dateView = rightExpressionView as? UIDatePicker {
@@ -560,26 +566,33 @@ open class UIPredicateEditorRowTemplate: NSObject {
   
   lazy var rightExpressionPopupButton: UIButton = {
     // check if we have any matching localization templates
-    var expressions = rightExpressions
+    let expressions = rightExpressions
+    let value = (predicate as? NSComparisonPredicate)?.rightExpression.stringValue
+    
+    var expressionPairs: [NSExpression: String] = [:]
     
     if let formattingHelper = formattingHelper {
-      
-      expressions = expressions.map { expression in
+      expressions.forEach { expression in
         guard let stringValue = expression.stringValue,
               let localizedValue = formattingHelper.rhsMatch(for: stringValue) else {
-          return expression
+          expressionPairs[expression] = expression.stringValue
+          return
         }
         
-        return NSExpression(forConstantValue: localizedValue)
+        expressionPairs[expression] = localizedValue
+      }
+    }
+    else {
+      expressions.forEach {
+        expressionPairs[$0] = $0.stringValue
       }
     }
     
-    let menuActions = expressions.compactMap { expression -> UIAction? in
-      guard let title = expression.stringValue else {
-        return nil
-      }
+    let menuActions = expressionPairs.map { (key: NSExpression, val: String) in
+      let title = val
+      let stateVal = key.stringValue
       
-      return UIAction(title: title) { [weak self] _ in
+      return UIAction(title: title, state: stateVal == value ? .on : .off) { [weak self] _ in
         #if DEBUG
         print("[UIPredicateEditor] right expression action: \(title)")
         #endif
@@ -646,6 +659,8 @@ open class UIPredicateEditorRowTemplate: NSObject {
       textField.keyboardType = UIKeyboardType.default
       textField.placeholder = "Value"
     }
+    
+    textField.text = (predicate as? NSComparisonPredicate)?.rightExpression.stringValue
     
     textField.delegate = self
     

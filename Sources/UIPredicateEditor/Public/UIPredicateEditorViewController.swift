@@ -180,7 +180,7 @@ open class UIPredicateEditorViewController: UICollectionViewController {
     }
     
     let rowTemplate = requiredRowTemplates[indexPath.item]
-    
+    rowTemplate.formattingDictionary = formattingDictionary
     #if DEBUG
     print("UIPredicateEditorViewController: will use template: \(rowTemplate) for index: \(indexPath.item)")
     #endif

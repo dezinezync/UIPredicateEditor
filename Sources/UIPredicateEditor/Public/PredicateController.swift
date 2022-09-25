@@ -73,9 +73,16 @@ public final class PredicateController {
       let comparisonOp = comparison.predicateOperatorType
       
       if let lhsKey = lhsComparison.stringValue,
-         let rhsKey = rhsComparison.stringValue {
+         var rhsKey = rhsComparison.stringValue {
         
-        let keyToMatch = "%[\(lhsKey)]@ %[\(comparisonOp.title)]@ %[\(rhsKey)]@"
+        if comparisonOp == .in || comparisonOp == .contains {
+          rhsKey = "(%@)"
+        }
+        else {
+          rhsKey = "%[\(rhsKey)]@"
+        }
+        
+        let keyToMatch = "%[\(lhsKey)]@ %[\(comparisonOp.title)]@ \(rhsKey)"
         
         if let matchedLocalization = formattingDictionary.first(where: { (key: String, value: String) in
           key == keyToMatch
