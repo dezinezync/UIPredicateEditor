@@ -233,7 +233,7 @@ open class UIPredicateEditorViewController: UICollectionViewController {
     
     guard showContextMenus else { return nil }
     
-    let deleteAction = UIAction(
+    let deleteAction: UIAction? = requiredRowTemplates.count <= 1 ? nil : UIAction(
       title: NSLocalizedString("Delete", bundle: .module, comment: "Delete action under row comments"),
       image: UIImage(systemName: "trash"),
       attributes: .destructive) { [weak self] _ in
@@ -264,7 +264,7 @@ open class UIPredicateEditorViewController: UICollectionViewController {
     return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
       UIMenu(
         title: NSLocalizedString("Row Actions", bundle: .module, comment: "Row Actions for predicate editor row template"),
-        children: additionalActions + [deleteAction]
+        children: additionalActions + [deleteAction].compactMap { $0 }
       )
     }
   }
