@@ -367,14 +367,23 @@ extension UIPredicateEditorViewController {
       }
     }.reduce([], +)
     
-    if parentRowTemplate == nil {
+    if parentRowTemplate == nil,
+       rowTemplates.first(where: { row in
+         guard let predicate = row.predicate else {
+           return false
+         }
+         
+         let format = predicate.predicateFormat.lowercased()
+         
+         return format.contains("and") || format.contains("or")
+       }) != nil {
       // allow adding a new combo row
       let comboAction = UIAction(
         title: NSLocalizedString("Combination", comment: "")) { [weak self] _ in
           #if DEBUG
           print("UIPredicateEditorViewController: footer menu: adding a new combination row")
           #endif
-          guard let self = self else { return }
+          guard let _ = self else { return }
           
           // @TODO: Add a new combo row with a child row
         }
