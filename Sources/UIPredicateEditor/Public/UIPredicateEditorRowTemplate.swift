@@ -641,6 +641,11 @@ open class UIPredicateEditorRowTemplate: NSObject {
     textField.textColor = .label
     textField.font = .systemFont(ofSize: 14, weight: .regular)
     
+    if options.contains(.caseInsensitive) {
+      textField.autocorrectionType = .no
+      textField.autocapitalizationType = .none
+    }
+    
     // styling
     textField.backgroundColor = .tertiarySystemBackground
     textField.layer.cornerRadius = 4
