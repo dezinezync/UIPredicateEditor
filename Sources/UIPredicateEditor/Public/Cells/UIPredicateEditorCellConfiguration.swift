@@ -97,6 +97,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     fatalError("init(coder:) has not been implemented")
   }
   
+  // MARK: Layout
   open override func layoutSubviews() {
     super.layoutSubviews()
     
@@ -154,11 +155,10 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     if let rightExpressionView = rightExpressionView {
       var rightExpressionViewSize: CGSize = .zero
       
-      if rightExpressionView is UITextField,
-         rightExpressionView.frame.width < 18.0 {
+      if rightExpressionView is UITextField {
         // occupy all available space
         var tempFrame = rightExpressionView.frame
-        tempFrame.size.width = cellBounds.width - lineWidth - horizontalPadding
+        tempFrame.size.width = cellBounds.width - lineWidth - (horizontalPadding * 2.0) - leadingPadding
         
         rightExpressionView.frame = tempFrame
         rightExpressionViewSize = tempFrame.size
@@ -169,7 +169,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
       }
       
       // include leading and trailing padding 
-      if (lineWidth + (leadingPadding + horizontalPadding) + rightExpressionViewSize.width) > (cellBounds.width - (leadingPadding + horizontalPadding)) {
+      if (lineWidth + (leadingPadding + horizontalPadding) + rightExpressionViewSize.width) > cellBounds.width {
         // move it to the next line
         var tempFrame = rightExpressionView.frame
         tempFrame.origin.y = frame.maxY + interItemVerticalPadding
@@ -241,7 +241,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     set { }
   }
   
-  // Mark: Internal
+  // MARK: - Internal
   internal weak var leftExpressionView: UIView!
   internal weak var operatorView: UIView!
   internal weak var rightExpressionView: UIView?
@@ -288,7 +288,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     }
     
     let rowViews = appliedConfiguration.rowTemplate?.templateViews ?? []
-    precondition(rowViews.count >= 2, "Expected atleast 2 views.")
+    precondition(rowViews.count >= 2, "Expected atleast 2 views")
     
     let leftExpressionView = rowViews[0]
     let operatorView = rowViews[1]
