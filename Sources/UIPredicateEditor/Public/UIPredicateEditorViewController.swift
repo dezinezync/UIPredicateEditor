@@ -193,8 +193,7 @@ open class UIPredicateEditorViewController: UICollectionViewController {
         indentationLevel: rowTemplate.indentationLevel
       )
       
-      var backgroundConfiguration = UIBackgroundConfiguration.listGroupedCell()
-      backgroundConfiguration.backgroundColor = .systemBackground
+      let backgroundConfiguration = UIBackgroundConfiguration.listGroupedCell()
       
       cell.contentConfiguration = configuration
       cell.backgroundConfiguration = backgroundConfiguration
@@ -281,7 +280,6 @@ extension UIPredicateEditorViewController {
     
     if #available(iOS 14.0, *) {
       var backgroundConfiguration = UIBackgroundConfiguration.listGroupedCell()
-      backgroundConfiguration.backgroundColor = .systemBackground
       
       cell.backgroundConfiguration = backgroundConfiguration
     }
