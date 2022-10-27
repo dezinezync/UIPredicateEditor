@@ -14,6 +14,14 @@ open class UIPredicateEditorBaseCell: UICollectionViewCell {
   
   weak var refreshDelegate: UIPredicateEditorRefreshing?
   
+  /// Called by the controller when the cell is about to be used for presentation
+  open func prepareForUse() {
+    // remove existing subviews
+    for view in contentView.subviews {
+      view.removeFromSuperview()
+    }
+  }
+  
   open override func systemLayoutSizeFitting(_ targetSize: CGSize, withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority, verticalFittingPriority: UILayoutPriority) -> CGSize {
     contentView.frame = self.bounds
     contentView.layoutIfNeeded()

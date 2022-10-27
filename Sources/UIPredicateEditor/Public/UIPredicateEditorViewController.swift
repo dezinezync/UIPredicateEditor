@@ -279,8 +279,7 @@ extension UIPredicateEditorViewController {
   public func configureCompoundTypesCell(_ cell: UIPredicateEditorBaseCell, rowTemplate: UIPredicateEditorRowTemplate) {
     
     if #available(iOS 14.0, *) {
-      var backgroundConfiguration = UIBackgroundConfiguration.listGroupedCell()
-      
+      let backgroundConfiguration = UIBackgroundConfiguration.listGroupedCell()
       cell.backgroundConfiguration = backgroundConfiguration
     }
     else {
@@ -288,10 +287,7 @@ extension UIPredicateEditorViewController {
       cell.backgroundColor = .systemBackground
     }
     
-    // remove existing subviews
-    for view in cell.contentView.subviews {
-      view.removeFromSuperview()
-    }
+    cell.prepareForUse()
     
     rowTemplate.refreshDelegate = self
     let views = rowTemplate.templateViews
