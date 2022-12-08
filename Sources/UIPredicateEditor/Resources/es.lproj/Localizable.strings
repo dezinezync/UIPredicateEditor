@@ -1,3 +1,6 @@
+/* No comment provided by engineer. */
+"Add Filter" = "Añadir filtro";
+
 /* All */
 "All" = "Todos";
 
@@ -9,6 +12,9 @@
 
 /* between */
 "between" = "entre";
+
+/* No comment provided by engineer. */
+"Combination" = "Combinación";
 
 /* contains */
 "contains" = "contiene";
@@ -41,7 +47,7 @@
 "is not" = "no es";
 
 /* like */
-"like" = "like";
+"like" = "gustar";
 
 /* matches */
 "matches" = "cerillas";
@@ -59,7 +65,7 @@
 "of the following are true" = "las siguientes son verdaderas";
 
 /* Row Actions for a predicate template row (delete) */
-"Row Actions" = "Row Actions";
+"Row Actions" = "Acciones de fila";
 
 /* Yes */
 "Yes" = "Sí";
