@@ -1,0 +1,72 @@
+/* No comment provided by engineer. */
+"Add Filter" = "Filter toevoegen";
+
+/* All */
+"All" = "Alle";
+
+/* Any */
+"Any" = "Een";
+
+/* begins with */
+"begins with" = "begint met";
+
+/* between */
+"between" = "tussen";
+
+/* No comment provided by engineer. */
+"Combination" = "Combinatie";
+
+/* contains */
+"contains" = "bevat";
+
+/* Delete action under row comments */
+"Delete" = "Verwijderen";
+
+/* ends with */
+"ends with" = "eindigt met";
+
+/* in */
+"in" = "in";
+
+/* is */
+"is" = "is";
+
+/* greater than */
+"is greater than" = "is groter dan";
+
+/* greater than or equal to */
+"is greater than or equal to" = "is groter dan of gelijk aan";
+
+/* less than */
+"is less than" = "is minder dan";
+
+/* less than or equal to */
+"is less than or equal to" = "is minder dan of gelijk aan";
+
+/* is not */
+"is not" = "is niet";
+
+/* like */
+"like" = "zoals";
+
+/* matches */
+"matches" = "komt overeen met";
+
+/* New Row Button Title */
+"New" = "Nieuw";
+
+/* No */
+"No" = "Geen";
+
+/* Any */
+"None" = "Geen";
+
+/* of the following are true */
+"of the following are true" = "van het volgende waar zijn";
+
+/* Row Actions for a predicate template row (delete) */
+"Row Actions" = "Rij acties";
+
+/* Yes */
+"Yes" = "Ja";
+

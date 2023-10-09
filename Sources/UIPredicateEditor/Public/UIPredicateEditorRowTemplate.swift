@@ -5,7 +5,7 @@
 //  Created by Nikhil Nigade on 26/05/22.
 //
 
-#if canImport(UIKit)
+#if os(iOS)
 import UIKit
 
 #if canImport(CoreData)

@@ -1,0 +1,72 @@
+/* No comment provided by engineer. */
+"Add Filter" = "Aggiungi filtro";
+
+/* All */
+"All" = "Tutti";
+
+/* Any */
+"Any" = "Qualsiasi";
+
+/* begins with */
+"begins with" = "inizia con";
+
+/* between */
+"between" = "tra";
+
+/* No comment provided by engineer. */
+"Combination" = "Combinazione";
+
+/* contains */
+"contains" = "contiene";
+
+/* Delete action under row comments */
+"Delete" = "Cancellare";
+
+/* ends with */
+"ends with" = "termina con";
+
+/* in */
+"in" = "in";
+
+/* is */
+"is" = "è";
+
+/* greater than */
+"is greater than" = "è maggiore di";
+
+/* greater than or equal to */
+"is greater than or equal to" = "è maggiore o uguale a";
+
+/* less than */
+"is less than" = "è inferiore a";
+
+/* less than or equal to */
+"is less than or equal to" = "è minore o uguale a";
+
+/* is not */
+"is not" = "non è";
+
+/* like */
+"like" = "come";
+
+/* matches */
+"matches" = "corrispondenze";
+
+/* New Row Button Title */
+"New" = "Nuovo";
+
+/* No */
+"No" = "No";
+
+/* Any */
+"None" = "Nessuno";
+
+/* of the following are true */
+"of the following are true" = "di quanto segue è vero";
+
+/* Row Actions for a predicate template row (delete) */
+"Row Actions" = "Azioni di riga";
+
+/* Yes */
+"Yes" = "Sì";
+

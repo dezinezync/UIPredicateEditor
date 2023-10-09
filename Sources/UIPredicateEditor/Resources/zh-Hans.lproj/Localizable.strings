@@ -1,0 +1,72 @@
+/* No comment provided by engineer. */
+"Add Filter" = "添加过滤器";
+
+/* All */
+"All" = "所有";
+
+/* Any */
+"Any" = "任何";
+
+/* begins with */
+"begins with" = "始于";
+
+/* between */
+"between" = "之间";
+
+/* No comment provided by engineer. */
+"Combination" = "组合";
+
+/* contains */
+"contains" = "包含";
+
+/* Delete action under row comments */
+"Delete" = "删除";
+
+/* ends with */
+"ends with" = "结束于";
+
+/* in */
+"in" = "在";
+
+/* is */
+"is" = "是";
+
+/* greater than */
+"is greater than" = "大于";
+
+/* greater than or equal to */
+"is greater than or equal to" = "大于或等于";
+
+/* less than */
+"is less than" = "小于";
+
+/* less than or equal to */
+"is less than or equal to" = "小于或等于";
+
+/* is not */
+"is not" = "不是";
+
+/* like */
+"like" = "像";
+
+/* matches */
+"matches" = "匹配";
+
+/* New Row Button Title */
+"New" = "新账户";
+
+/* No */
+"No" = "没有";
+
+/* Any */
+"None" = "没有";
+
+/* of the following are true */
+"of the following are true" = "以下情况为真";
+
+/* Row Actions for a predicate template row (delete) */
+"Row Actions" = "行操作";
+
+/* Yes */
+"Yes" = "有";
+

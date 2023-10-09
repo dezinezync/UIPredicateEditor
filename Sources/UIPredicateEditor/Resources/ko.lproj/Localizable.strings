@@ -1,0 +1,72 @@
+/* No comment provided by engineer. */
+"Add Filter" = "필터 추가";
+
+/* All */
+"All" = "모두";
+
+/* Any */
+"Any" = "모든";
+
+/* begins with */
+"begins with" = "로 시작";
+
+/* between */
+"between" = "사이";
+
+/* No comment provided by engineer. */
+"Combination" = "조합";
+
+/* contains */
+"contains" = "포함";
+
+/* Delete action under row comments */
+"Delete" = "삭제";
+
+/* ends with */
+"ends with" = "로 끝나는";
+
+/* in */
+"in" = "in";
+
+/* is */
+"is" = "이";
+
+/* greater than */
+"is greater than" = "보다 크거나";
+
+/* greater than or equal to */
+"is greater than or equal to" = "보다 크거나";
+
+/* less than */
+"is less than" = "보다 작거나";
+
+/* less than or equal to */
+"is less than or equal to" = "보다 작거나";
+
+/* is not */
+"is not" = "는";
+
+/* like */
+"like" = "같은";
+
+/* matches */
+"matches" = "일치";
+
+/* New Row Button Title */
+"New" = "신규";
+
+/* No */
+"No" = "No";
+
+/* Any */
+"None" = "없음";
+
+/* of the following are true */
+"of the following are true" = "다음 중 하나에 해당합니다.";
+
+/* Row Actions for a predicate template row (delete) */
+"Row Actions" = "행 작업";
+
+/* Yes */
+"Yes" = "예";
+

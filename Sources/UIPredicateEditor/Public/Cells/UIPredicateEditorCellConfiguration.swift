@@ -5,7 +5,7 @@
 //  Created by Nikhil Nigade on 02/06/22.
 //
 
-#if canImport(UIKit)
+#if os(iOS)
 import UIKit
 
 @available(iOS 14.0, *)

@@ -5,10 +5,10 @@
 "All" = "Todos";
 
 /* Any */
-"Any" = "Cualquiera";
+"Any" = "Cualquier";
 
 /* begins with */
-"begins with" = "empieza por";
+"begins with" = "comienza con";
 
 /* between */
 "between" = "entre";
@@ -20,13 +20,13 @@
 "contains" = "contiene";
 
 /* Delete action under row comments */
-"Delete" = "Eliminar";
+"Delete" = "Borrar";
 
 /* ends with */
-"ends with" = "termina en";
+"ends with" = "termina con";
 
 /* in */
-"in" = "pg";
+"in" = "en";
 
 /* is */
 "is" = "es";
@@ -35,22 +35,22 @@
 "is greater than" = "es mayor que";
 
 /* greater than or equal to */
-"is greater than or equal to" = "es mayor que o igual a";
+"is greater than or equal to" = "es mayor o igual que";
 
 /* less than */
 "is less than" = "es menor que";
 
 /* less than or equal to */
-"is less than or equal to" = "es menor que o igual a";
+"is less than or equal to" = "es menor o igual que";
 
 /* is not */
 "is not" = "no es";
 
 /* like */
-"like" = "gustar";
+"like" = "como";
 
 /* matches */
-"matches" = "cerillas";
+"matches" = "coincide con";
 
 /* New Row Button Title */
 "New" = "Nuevo";
@@ -59,10 +59,10 @@
 "No" = "No";
 
 /* Any */
-"None" = "None";
+"None" = "Ninguno";
 
 /* of the following are true */
-"of the following are true" = "las siguientes son verdaderas";
+"of the following are true" = "de las siguientes son verdaderas";
 
 /* Row Actions for a predicate template row (delete) */
 "Row Actions" = "Acciones de fila";

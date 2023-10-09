@@ -5,7 +5,7 @@
 //  Created by Nikhil Nigade on 31/05/22.
 //
 
-#if canImport(UIKit)
+#if os(iOS)
 import UIKit
 
 @available(iOS 14, macCatalyst 14, *)

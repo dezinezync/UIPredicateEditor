@@ -5,7 +5,7 @@
 //  Created by Nikhil Nigade on 31/05/22.
 //
 
-#if canImport(UIKit)
+#if os(iOS)
 import UIKit
 
 /// A generic base class for rendering various subpredicates in the `UIPredicateEditor`. 

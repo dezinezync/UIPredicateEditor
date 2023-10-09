@@ -5,7 +5,7 @@
 //  Created by Nikhil Nigade on 17/08/22.
 //
 
-#if canImport(UIKit)
+#if os(iOS)
 import Foundation
 
 public extension Notification.Name {

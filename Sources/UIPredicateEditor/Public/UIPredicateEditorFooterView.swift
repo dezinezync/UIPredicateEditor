@@ -5,7 +5,7 @@
 //  Created by Nikhil Nigade on 05/06/22.
 //
 
-#if canImport(UIKit)
+#if os(iOS)
 import UIKit
 
 /// Footer view used in the last section of the ``UIPredicateEditor``. This section hosts a center aligned ``UIButton`` which displays a menu of all the left expressions present in the predicate editor. The user may select any one and add a new row to the predicate editor.

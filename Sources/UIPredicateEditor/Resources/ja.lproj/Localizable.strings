@@ -1,0 +1,72 @@
+/* No comment provided by engineer. */
+"Add Filter" = "フィルター追加";
+
+/* All */
+"All" = "すべて";
+
+/* Any */
+"Any" = "いずれも";
+
+/* begins with */
+"begins with" = "で始まる";
+
+/* between */
+"between" = "間";
+
+/* No comment provided by engineer. */
+"Combination" = "組合せ";
+
+/* contains */
+"contains" = "入り";
+
+/* Delete action under row comments */
+"Delete" = "削除";
+
+/* ends with */
+"ends with" = "に尽きる。";
+
+/* in */
+"in" = "において";
+
+/* is */
+"is" = "です";
+
+/* greater than */
+"is greater than" = "よりも大きい";
+
+/* greater than or equal to */
+"is greater than or equal to" = "は以上である。";
+
+/* less than */
+"is less than" = "以下である";
+
+/* less than or equal to */
+"is less than or equal to" = "は以下である。";
+
+/* is not */
+"is not" = "じゃない";
+
+/* like */
+"like" = "きにめす";
+
+/* matches */
+"matches" = "試合";
+
+/* New Row Button Title */
+"New" = "新規";
+
+/* No */
+"No" = "いいえ";
+
+/* Any */
+"None" = "なし";
+
+/* of the following are true */
+"of the following are true" = "以下のうち、正しいものは";
+
+/* Row Actions for a predicate template row (delete) */
+"Row Actions" = "行の動作";
+
+/* Yes */
+"Yes" = "はい";
+
