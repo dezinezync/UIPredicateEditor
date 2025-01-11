@@ -44,6 +44,20 @@ extension NSExpression {
         return "\(value)"
       }
       
+      if let value = value as? Bool {
+        return value ? NSLocalizedString("True", comment: "") : NSLocalizedString("False", comment: "")
+      }
+      
+      if let value = value as? Date {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        return formatter.string(from: value)
+      }
+      
+      if value is NSNull {
+        return "null"
+      }
+      
       return nil
       /*
        * Use the following format to implement additional cases as nessary
@@ -60,6 +74,6 @@ extension NSExpression {
       fatalError("Not implemented")
     }
     
-    fatalError("Unknown or unimplemented expression type")
+    // fatalError("Unknown or unimplemented expression type")
   }
 }

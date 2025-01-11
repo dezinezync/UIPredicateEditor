@@ -8,13 +8,13 @@
 import Foundation
 
 @available(iOS 14, macOS 11, *)
-final class FormattingDictionaryHelper {
+public final class FormattingDictionaryHelper {
   
   private let formattingDictionary: [String: String]
   
   /// Initialize an instance with the localization strings dictionary
   /// - Parameter formattingDictionary: the strings dictionary
-  init(formattingDictionary: [String: String]) {
+  public init(formattingDictionary: [String: String]) {
     self.formattingDictionary = formattingDictionary
   }
   

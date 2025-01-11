@@ -242,6 +242,9 @@ open class UIPredicateEditorRowTemplate: NSObject {
             if rightExpressionAttributeType == .dateAttributeType {
               views.append(dateInputView)
             }
+            else if rightExpressionAttributeType == .booleanAttributeType {
+              views.append(toggleInputView)
+            }
             else {
               views.append(textInputView)
             }
@@ -304,7 +307,7 @@ open class UIPredicateEditorRowTemplate: NSObject {
     self.predicate = comparisonPredicate
   }
   
-  @available(iOS 14, macCatalyst 14.0, *) public func logicalTypeForCurrentState() -> NSCompoundPredicate.LogicalType {
+  public func logicalTypeForCurrentState() -> NSCompoundPredicate.LogicalType {
     if let selected = self.compoundTypesButton.menu?.uiSelectedElements.first as? UIAction {
       if selected.title == NSCompoundPredicate.LogicalType.and.localizedTitle {
         return .and
@@ -324,10 +327,12 @@ open class UIPredicateEditorRowTemplate: NSObject {
   /// - Returns: `NSComparisonPredicate` if one could be formed
   public func predicateForCurrentState() -> NSComparisonPredicate? {
     if !self.compoundTypes.isEmpty {
-      if #available(iOS 14, macCatalyst 14.0, *) {
-        self.predicate = NSCompoundPredicate(type: logicalTypeForCurrentState(), subpredicates: [])
-      }
-      
+      self.predicate = NSCompoundPredicate(type: logicalTypeForCurrentState(), subpredicates: [])
+      return nil
+    }
+    
+    let views = templateViews
+    guard views.count >= 1 else {
       return nil
     }
     
@@ -336,89 +341,102 @@ open class UIPredicateEditorRowTemplate: NSObject {
     var predicateOperator: NSComparisonPredicate.Operator = .equalTo
     var rightExpression: NSExpression?
     
-    let views = templateViews
     let leftExpressionView = views[0]
     
-    if #available(iOS 14, macCatalyst 14.0, *) {
-      if let button = leftExpressionView as? UIButton,
-         let item = button.menu?.uiSelectedElements.first as? UIAction {
+    if let button = leftExpressionView as? UIButton,
+       let item = button.menu?.uiSelectedElements.first as? UIAction {
+      
+      var title = item.title
+      
+      // we may have localized this title
+      if let formattingHelper = formattingHelper,
+         let baseKey = formattingHelper.lhsReverseMatch(for: title) {
+        title = baseKey
+      }
+      
+      let matchingExpression = leftExpressions.first { expression in
+        title == expression.stringValue
+      }
+      
+      leftExpression = matchingExpression
+    }
+    
+    let operatorView = views[1]
+    
+    if let operatorButton = operatorView as? UIButton,
+       let item = operatorButton.menu?.uiSelectedElements.first as? UIAction {
+      predicateOperator = NSComparisonPredicate.Operator.from(item.title)
+    }
+    
+    if views.count > 2 {
+      let rightExpressionView = views[2]
+      
+      if let rightExpressionView = rightExpressionView as? UIButton,
+         let item = rightExpressionView.menu?.uiSelectedElements.first as? UIAction {
         
         var title = item.title
         
         // we may have localized this title
         if let formattingHelper = formattingHelper,
-           let baseKey = formattingHelper.lhsReverseMatch(for: title) {
+           let baseKey = formattingHelper.rhsReverseMatch(for: title) {
           title = baseKey
         }
         
-        let matchingExpression = leftExpressions.first { expression in
-          title == expression.stringValue
-        }
-        
-        leftExpression = matchingExpression
+        rightExpression = NSExpression(forConstantValue: title)
       }
-      
-      let operatorView = views[1]
-      
-      if let operatorButton = operatorView as? UIButton,
-         let item = operatorButton.menu?.uiSelectedElements.first as? UIAction {
-        predicateOperator = NSComparisonPredicate.Operator.from(item.title)
-      }
-      
-      if views.count > 2 {
-        let rightExpressionView = views[2]
+      else if let textField = rightExpressionView as? UITextField {
         
-        if let rightExpressionView = rightExpressionView as? UIButton,
-           let item = rightExpressionView.menu?.uiSelectedElements.first as? UIAction {
-          
-          var title = item.title
-          
-          // we may have localized this title
-          if let formattingHelper = formattingHelper,
-             let baseKey = formattingHelper.rhsReverseMatch(for: title) {
-            title = baseKey
-          }
-          
-          rightExpression = NSExpression(forConstantValue: title)
+        if textField.keyboardType == .URL,
+           let url = URL(string: textField.text ?? "") {
+          rightExpression = NSExpression(forConstantValue: url)
         }
-        else if let textField = rightExpressionView as? UITextField {
+        else if textField.keyboardType == .numbersAndPunctuation {
+          let text = (textField.text ?? "") as NSString
           
-          if textField.keyboardType == .URL,
-             let url = URL(string: textField.text ?? "") {
-            rightExpression = NSExpression(forConstantValue: url)
+          if rightExpressionAttributeType == .doubleAttributeType {
+            rightExpression = NSExpression(forConstantValue: text.doubleValue)
           }
-          else if textField.keyboardType == .numbersAndPunctuation {
-            let text = (textField.text ?? "") as NSString
-            
-            if rightExpressionAttributeType == .doubleAttributeType {
-              rightExpression = NSExpression(forConstantValue: text.doubleValue)
-            }
-            else if rightExpressionAttributeType == .floatAttributeType {
-              rightExpression = NSExpression(forConstantValue: text.floatValue)
-            }
-            else if rightExpressionAttributeType == .integer16AttributeType || rightExpressionAttributeType == .integer32AttributeType {
-              rightExpression = NSExpression(forConstantValue: text.intValue)
-            }
-            else if rightExpressionAttributeType == .integer64AttributeType {
-              rightExpression = NSExpression(forConstantValue: text.integerValue)
-            }
-            else if rightExpressionAttributeType == .stringAttributeType {
-              rightExpression = NSExpression(forConstantValue: text as String)
-            }
-            /*
-             * Use the following template to handle additional cases
-             else if rightExpressionAttributeType == <#type#> {
-               rightExpression = NSExpression(forConstantValue: text.<#valueType#>)
-             }
-             */
+          else if rightExpressionAttributeType == .floatAttributeType {
+            rightExpression = NSExpression(forConstantValue: text.floatValue)
           }
-          else {
-            rightExpression = NSExpression(forConstantValue: textField.text ?? "")
+          else if rightExpressionAttributeType == .integer16AttributeType || rightExpressionAttributeType == .integer32AttributeType {
+            rightExpression = NSExpression(forConstantValue: text.intValue)
           }
+          else if rightExpressionAttributeType == .integer64AttributeType {
+            rightExpression = NSExpression(forConstantValue: text.integerValue)
+          }
+          else if rightExpressionAttributeType == .stringAttributeType {
+            rightExpression = NSExpression(forConstantValue: text as String)
+          }
+          else if rightExpressionAttributeType == .booleanAttributeType {
+            let text = (textField.text ?? "").lowercased()
+            if text == "true" || text == NSLocalizedString("yes", comment: "") {
+              rightExpression = NSExpression(forConstantValue: true)
+            }
+            else if text == "false" || text == NSLocalizedString("no", comment: "") {
+              rightExpression = NSExpression(forConstantValue: false)
+            }
+            else {
+              // fallback, maybe nil or default
+              rightExpression = NSExpression(forConstantValue: false)
+            }
+          }
+          /*
+           * Use the following template to handle additional cases
+           else if rightExpressionAttributeType == <#type#> {
+             rightExpression = NSExpression(forConstantValue: text.<#valueType#>)
+           }
+           */
         }
-        else if let dateView = rightExpressionView as? UIDatePicker {
-          rightExpression = NSExpression(forConstantValue: dateView.date)
+        else if let toggle = rightExpressionView as? UISwitch {
+          rightExpression = NSExpression(forConstantValue: toggle.isOn)
         }
+        else {
+          rightExpression = NSExpression(forConstantValue: textField.text ?? "")
+        }
+      }
+      else if let dateView = rightExpressionView as? UIDatePicker {
+        rightExpression = NSExpression(forConstantValue: dateView.date)
       }
     }
     
@@ -460,6 +478,9 @@ open class UIPredicateEditorRowTemplate: NSObject {
       options: options
     )
     
+    self.predicate = comparisonPredicate
+    
+    // @TODO: Check if we should cache this, instead of always generating it on-demand.
     return comparisonPredicate
   }
   
@@ -467,17 +488,12 @@ open class UIPredicateEditorRowTemplate: NSObject {
   func buttonWithMenu(_ actions: [UIMenuElement]) -> UIButton {
     let button = UIButton(frame: .zero)
     
-    if #available(iOS 14.0, *) {
-      button.menu = UIMenu(children: actions)
-      button.showsMenuAsPrimaryAction = true
-      
-      if actions.count == 1 {
-        // single value, disable interaction
-        button.isEnabled = false
-      }
-    }
-    else {
-      // fallback for older versions
+    button.menu = UIMenu(children: actions)
+    button.showsMenuAsPrimaryAction = true
+    
+    if actions.count == 1 {
+      // single value, disable interaction
+      button.isEnabled = false
     }
     
     if #available(iOS 15, macCatalyst 15.0, *) {
@@ -677,10 +693,7 @@ open class UIPredicateEditorRowTemplate: NSObject {
   lazy var dateInputView: UIDatePicker = {
     let datePicker = UIDatePicker()
     datePicker.datePickerMode = .dateAndTime
-    
-    if #available(iOS 14.0, *) {
-      datePicker.preferredDatePickerStyle = .inline
-    }
+    datePicker.preferredDatePickerStyle = .inline
     
     datePicker.addTarget(self, action: #selector(didChangeDate(_:)), for: .valueChanged)
     
@@ -689,7 +702,21 @@ open class UIPredicateEditorRowTemplate: NSObject {
     return datePicker
   }()
   
+  lazy var toggleInputView: UISwitch = {
+    let toggle = UISwitch()
+    toggle.preferredStyle = .automatic
+    toggle.addTarget(self, action: #selector(didToggle(_:)), for: .valueChanged)
+    
+    toggle.sizeToFit()
+    
+    return toggle
+  }()
+  
   @objc func didChangeDate(_ sender: Any?) {
+    updatePredicate()
+  }
+  
+  @objc func didToggle(_ sender: Any?) {
     updatePredicate()
   }
 }
