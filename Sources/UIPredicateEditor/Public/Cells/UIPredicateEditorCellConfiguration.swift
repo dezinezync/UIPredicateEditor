@@ -288,7 +288,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     }
     
     let rowViews = appliedConfiguration.rowTemplate?.templateViews ?? []
-    precondition(rowViews.count >= 2, "Expected atleast 2 views")
+    assert(rowViews.count >= 2, "Expected atleast 2 views")
     
     let leftExpressionView = rowViews[0]
     let operatorView = rowViews[1]

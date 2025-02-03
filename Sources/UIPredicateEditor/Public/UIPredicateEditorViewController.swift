@@ -86,11 +86,11 @@ open class UIPredicateEditorViewController: UICollectionViewController {
   // MARK: Init
   
   public init(predicate: NSPredicate, rowTemplates: [UIPredicateEditorRowTemplate], layout: UICollectionViewLayout) {
-    precondition(!rowTemplates.isEmpty, "Initialize the UIPredicateEditor with atleast one row template")
+    assert(!rowTemplates.isEmpty, "Initialize the UIPredicateEditor with atleast one row template")
     
     let compoundTypeRow = rowTemplates.first(where: { !$0.compoundTypes.isEmpty })
     
-    precondition(compoundTypeRow != nil, "The row templates should always include one compound type row")
+    assert(compoundTypeRow != nil, "The row templates should always include one compound type row")
     
     super.init(collectionViewLayout: layout)
     
@@ -110,6 +110,30 @@ open class UIPredicateEditorViewController: UICollectionViewController {
     // register our views
     UIPredicateEditorBaseCell.register(on: collectionView)
     UIPredicateEditorFooterView.register(on: collectionView)
+    
+    let layout = UIPredicateEditorLayout.preparedLayout { [weak self] indexPath in
+      guard let self,
+            indexPath.section > 0 else {
+        return nil
+      }
+      
+      let deleteAction = UIContextualAction(style: .destructive, title: NSLocalizedString("Delete", bundle: .module, comment: "Delete action under row comments"), handler: { _, _, completion in
+        let index = indexPath.item
+        
+        self.predicateController.deleteRowTemplate(at: index)
+        self.refreshContentView()
+        
+        self.refreshContentView()
+        self.collectionView.reloadData()
+        
+        completion(true)
+      })
+      deleteAction.image = UIImage(systemName: "trash")
+      
+      return UISwipeActionsConfiguration(actions: [deleteAction])
+    }
+    
+    collectionView.setCollectionViewLayout(layout, animated: false)
     
     // reload the predicate and update the view
     reloadPredicate()
@@ -182,28 +206,22 @@ open class UIPredicateEditorViewController: UICollectionViewController {
     let rowTemplate = requiredRowTemplates[indexPath.item]
     rowTemplate.formattingDictionary = formattingDictionary
     #if DEBUG
-    print("UIPredicateEditorViewController: will use template: \(rowTemplate) for index: \(indexPath.item)")
+    print("UIPredicateEditorViewController: will use template: \(rowTemplate) for indexPath: \(indexPath)")
     #endif
     
-    if #available(iOS 14.0, *) {
-      let configuration = UIPredicateEditorCellConfiguration(
-        rowTemplate: rowTemplate,
-        traitCollection: cell.traitCollection,
-        isEditable: self.isEditable,
-        indentationLevel: rowTemplate.indentationLevel
-      )
-      
-      let backgroundConfiguration = UIBackgroundConfiguration.listGroupedCell()
-      
-      cell.contentConfiguration = configuration
-      cell.backgroundConfiguration = backgroundConfiguration
-      
-      configuration.delegate = cell
-    }
-    else {
-      // Fallback on earlier versions
-      fatalError("Implement in your subclass by vendoring a custom cell")
-    }
+    let configuration = UIPredicateEditorCellConfiguration(
+      rowTemplate: rowTemplate,
+      traitCollection: cell.traitCollection,
+      isEditable: self.isEditable,
+      indentationLevel: rowTemplate.indentationLevel
+    )
+    
+    let backgroundConfiguration = UIBackgroundConfiguration.listGroupedCell()
+    
+    cell.contentConfiguration = configuration
+    cell.backgroundConfiguration = backgroundConfiguration
+    
+    configuration.delegate = cell
     
     return cell
   }
@@ -278,14 +296,8 @@ extension UIPredicateEditorViewController {
   ///   - rowTemplate: the row template to fetch views from 
   public func configureCompoundTypesCell(_ cell: UIPredicateEditorBaseCell, rowTemplate: UIPredicateEditorRowTemplate) {
     
-    if #available(iOS 14.0, *) {
-      let backgroundConfiguration = UIBackgroundConfiguration.listGroupedCell()
-      cell.backgroundConfiguration = backgroundConfiguration
-    }
-    else {
-      // Fallback on earlier versions
-      cell.backgroundColor = .systemBackground
-    }
+    let backgroundConfiguration = UIBackgroundConfiguration.listGroupedCell()
+    cell.backgroundConfiguration = backgroundConfiguration
     
     cell.prepareForUse()
     

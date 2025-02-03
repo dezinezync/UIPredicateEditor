@@ -557,7 +557,7 @@ open class UIPredicateEditorRowTemplate: NSObject {
   
   lazy var operatorsPopupButton: UIButton = {
     let menuActions = operators.map { operation in
-      UIAction(title: operation.localizedTitle) { [weak self] _ in
+      UIAction(title: operation.localizedTitle, state: (self.predicate as? NSComparisonPredicate)?.predicateOperatorType == operation ? .on : .off) { [weak self] _ in
         #if DEBUG
         print("[UIPredicateEditor] operation action: \(operation.localizedTitle)")
         #endif
@@ -731,8 +731,11 @@ extension UIPredicateEditorRowTemplate: NSCopying {
 
 // MARK: - UITextFieldDelegate
 extension UIPredicateEditorRowTemplate: UITextFieldDelegate {
-  public func textFieldDidEndEditing(_ textField: UITextField) {
-    updatePredicate()
+  public func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+    defer {
+      updatePredicate()
+    }
+    return true
   }
   
   public func textFieldShouldReturn(_ textField: UITextField) -> Bool {
