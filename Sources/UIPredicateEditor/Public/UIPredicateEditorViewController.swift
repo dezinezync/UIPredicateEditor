@@ -112,15 +112,20 @@ open class UIPredicateEditorViewController: UICollectionViewController {
     UIPredicateEditorFooterView.register(on: collectionView)
     
     let layout = UIPredicateEditorLayout.preparedLayout { [weak self] indexPath in
-      guard let self,
-            indexPath.section > 0 else {
+      guard indexPath.section > 0 else {
         return nil
       }
       
       let deleteAction = UIContextualAction(style: .destructive, title: NSLocalizedString("Delete", bundle: .module, comment: "Delete action under row comments"), handler: { _, _, completion in
+        guard let self else {
+          return
+        }
+        
         let index = indexPath.item
         
         self.predicateController.deleteRowTemplate(at: index)
+        self.predicateController.updatePredicate(for: self.rowTemplates.first(where: { $0.compoundTypes != nil })!.logicalType)
+        
         self.refreshContentView()
         
         self.collectionView.reloadData()
@@ -196,12 +201,12 @@ open class UIPredicateEditorViewController: UICollectionViewController {
         fatalError("Row template for compound type row not found (any/all/not)")
       }
       
-      // configureCompoundTypesCell(cell, rowTemplate: rowTemplate)
       let configuration = UIPredicateEditorCellConfiguration(
         rowTemplate: rowTemplate,
         traitCollection: cell.traitCollection,
         isEditable: self.isEditable,
-        indentationLevel: 0
+        indentationLevel: 0,
+        delegate: self
       )
       
       cell.contentConfiguration = configuration
@@ -217,7 +222,8 @@ open class UIPredicateEditorViewController: UICollectionViewController {
         rowTemplate: rowTemplate,
         traitCollection: cell.traitCollection,
         isEditable: self.isEditable,
-        indentationLevel: rowTemplate.indentationLevel
+        indentationLevel: rowTemplate.indentationLevel,
+        delegate: self
       )
       
       configuration.delegate = cell
@@ -444,7 +450,9 @@ extension UIPredicateEditorViewController: UIPredicateEditorContentRefreshing {
     // only called for the compund type predicate
     guard let cell = collectionView.cellForItem(at: IndexPath(item: 0, section: 0)),
           !cell.contentView.subviews.isEmpty,
-          let button = cell.contentView.subviews[0] as? UIButton,
+          let firstAncestor = cell.contentView.subviews.first,
+          !firstAncestor.subviews.isEmpty,
+          let button = firstAncestor.subviews[0] as? UIButton,
           let action = button.menu?.uiSelectedElements.first as? UIAction else {
       return
     }

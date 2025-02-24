@@ -263,11 +263,13 @@ open class UIPredicateEditorRowTemplate: NSObject {
   ///
   /// This method is only called if match(for:) returned a positive value for the receiver.
   ///
-  /// You can override this to set the values of custom views.
+  /// You can override this to set the values of custom views, but you must call `super.setPredicate(_:)` so the receiver has a chance to notify its delegate.
   ///
   /// - Parameter predicate: The predicate value for the receiver.
   open func setPredicate(_ predicate: NSPredicate) {
     self.predicate = predicate
+    
+    refreshDelegate?.refreshContentView()
   }
   
   /// Returns the subpredicates that should be made sub-rows of a given predicate.
@@ -291,12 +293,10 @@ open class UIPredicateEditorRowTemplate: NSObject {
   open func predicate(withSubpredicates subpredicates: [NSPredicate]?) -> NSPredicate {
     NSPredicate()
   }
-
   
   // MARK: - Internal
   public func updatePredicate() {
     defer {
-      // refresh views
       refreshDelegate?.refreshContentView()
     }
     
@@ -304,7 +304,7 @@ open class UIPredicateEditorRowTemplate: NSObject {
       return
     }
     
-    self.predicate = comparisonPredicate
+    setPredicate(comparisonPredicate)
   }
   
   public func logicalTypeForCurrentState() -> NSCompoundPredicate.LogicalType {

@@ -128,9 +128,12 @@ public final class PredicateController {
   /// The receiver internally updates the derived predicate and notifies subscribers.
   /// - Parameter logicalType: logical type of the predicate.
   public func updatePredicate(for logicalType: NSCompoundPredicate.LogicalType) {
+    Task { @MainActor in
+      notifyPredicateWillChange()
+    }
     
-    // list of predicates forming the final compound predicate.
-    // this may contain a mix of normal and compound predicates.
+    // List of predicates forming the final compound predicate.
+    // This may contain a mix of normal and compound predicates.
     var predicates: [NSPredicate] = []
     
     let upperIndex = requiredRowTemplates.count
@@ -181,8 +184,8 @@ public final class PredicateController {
     
     self.predicate = compoundPredicate
     
-    DispatchQueue.main.async {
-      NotificationCenter.default.post(name: .predicateDidChange, object: self)
+    Task { @MainActor in
+      notifyPredicateDidChange()
     }
   }
   
@@ -245,6 +248,16 @@ public final class PredicateController {
       // also remove all child rows associated with this template
       requiredRowTemplates = requiredRowTemplates.filter { $0.parentTemplateID != templateID }
     }
+  }
+  
+  // MARK: Notify
+  @MainActor internal func notifyPredicateWillChange() {
+    // @TODO: Refactor to call delegate
+  }
+  
+  @MainActor internal func notifyPredicateDidChange() {
+    // @TODO: Refactor to call delegate
+    NotificationCenter.default.post(name: .predicateDidChange, object: self)
   }
   
   // MARK: Internal

@@ -27,11 +27,12 @@ open class UIPredicateEditorCellConfiguration: UIContentConfiguration, Equatable
   
   var indentationLevel: Int
   
-  init(rowTemplate: UIPredicateEditorRowTemplate, traitCollection: UITraitCollection, isEditable: Bool = true, indentationLevel: Int) {
+  init(rowTemplate: UIPredicateEditorRowTemplate, traitCollection: UITraitCollection, isEditable: Bool = true, indentationLevel: Int, delegate: (any UIPredicateEditorContentRefreshing)?) {
     self.rowTemplate = rowTemplate
     self.state = UICellConfigurationState(traitCollection: traitCollection)
     self.isEditable = isEditable
     self.indentationLevel = indentationLevel
+    self.delegate = delegate
   }
   
   public func makeContentView() -> UIView & UIContentView {
