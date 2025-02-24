@@ -115,39 +115,39 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     var frame: CGRect = .zero
     var lines: Int = 1
     
-    leftExpressionView.sizeToFit()
-    frame = leftExpressionView.frame
-    frame.size = leftExpressionView.intrinsicContentSize
+    leftExpressionView?.sizeToFit()
+    frame = leftExpressionView?.frame ?? .zero
+    frame.size = leftExpressionView?.intrinsicContentSize ?? .zero
     frame.origin.y = verticalPadding
     frame.origin.x = leadingPadding
     
-    leftExpressionView.frame = frame
+    leftExpressionView?.frame = frame
     updateViewInteractionState(for: leftExpressionView)
     
     lineWidth = frame.maxX
     
-    operatorView.sizeToFit()
+    operatorView?.sizeToFit()
     
-    if (lineWidth + horizontalPadding + operatorView.intrinsicContentSize.width) > (cellBounds.width - (leadingPadding + horizontalPadding)) {
+    if (lineWidth + horizontalPadding + (operatorView?.intrinsicContentSize.width ?? 0)) > (cellBounds.width - (leadingPadding + horizontalPadding)) {
       // move it to the next line
-      var tempFrame = operatorView.frame
+      var tempFrame = operatorView?.frame ?? .zero
       tempFrame.origin.y = frame.maxY + interItemVerticalPadding
       
-      operatorView.frame = tempFrame
+      operatorView?.frame = tempFrame
       lineWidth = 0.0
       
       lines += 1
     }
     
-    frame = operatorView.frame
-    frame.size = operatorView.intrinsicContentSize
+    frame = operatorView?.frame ?? .zero
+    frame.size = operatorView?.intrinsicContentSize ?? .zero
     frame.origin.x = lineWidth > 0 ? (lineWidth + horizontalPadding) : leadingPadding
     
     if lineWidth != 0.0 {
       frame.origin.y = verticalPadding
     }
     
-    operatorView.frame = frame
+    operatorView?.frame = frame
     updateViewInteractionState(for: operatorView)
     
     lineWidth = frame.maxX
@@ -197,7 +197,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     // if all views fit within the line
     // center them vertically in the content view
     if lines == 1, lineWidth <= (cellBounds.width - (leadingPadding + horizontalPadding)) {
-      for view: UIView? in [leftExpressionView, operatorView, rightExpressionView] {
+      for view: UIView? in [leftExpressionView, operatorView, rightExpressionView].compactMap ({ $0 }) {
         if let view = view {
           var frame = view.frame
           frame.origin.y = (cellBounds.height - frame.height) * 0.5
@@ -287,7 +287,11 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
       contentView.subviews.forEach { $0.removeFromSuperview() }
     }
     
-    let rowViews = appliedConfiguration.rowTemplate?.templateViews ?? []
+    guard let rowTemplate = appliedConfiguration.rowTemplate else {
+      return
+    }
+    
+    let rowViews = rowTemplate.templateViews
     assert(rowViews.count >= 2, "Expected atleast 2 views")
     
     let leftExpressionView = rowViews[0]
@@ -320,12 +324,12 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
   
   /// Update the user interaction flag on the view/control based on the applied configuration.
   /// - Parameter view: the view to update the interaction flag on. If it is an instance of ``UIControl``, its `isEnabled` property will be updated instead. 
-  func updateViewInteractionState(for view: UIView) {
+  func updateViewInteractionState(for view: UIView?) {
     if let control = view as? UIControl {
       control.isEnabled = appliedConfiguration?.isEditable ?? true
     }
     else{
-      view.isUserInteractionEnabled = appliedConfiguration?.isEditable ?? true
+      view?.isUserInteractionEnabled = appliedConfiguration?.isEditable ?? true
     }
   }
 }

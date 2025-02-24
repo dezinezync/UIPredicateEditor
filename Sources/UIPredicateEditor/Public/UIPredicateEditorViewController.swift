@@ -59,8 +59,8 @@ open class UIPredicateEditorViewController: UICollectionViewController {
     set { predicateController.formattingDictionary = newValue }
   }
   
-  public var formattingStringsFilename: String?
   // @TODO: Implementation pending
+  public var formattingStringsFilename: String?
   
   /// show context menus from the rows to delete the row if necessary.
   open var showContextMenus: Bool { true }
@@ -123,7 +123,6 @@ open class UIPredicateEditorViewController: UICollectionViewController {
         self.predicateController.deleteRowTemplate(at: index)
         self.refreshContentView()
         
-        self.refreshContentView()
         self.collectionView.reloadData()
         
         completion(true)
@@ -186,8 +185,7 @@ open class UIPredicateEditorViewController: UICollectionViewController {
     return requiredRowTemplates.count
   }
   
-  open override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-    
+  open override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {    
     let cell = collectionView.dequeueReusableCell(withReuseIdentifier: UIPredicateEditorBaseCell.identifier, for: indexPath) as! UIPredicateEditorBaseCell
     
     cell.refreshDelegate = self
@@ -198,30 +196,37 @@ open class UIPredicateEditorViewController: UICollectionViewController {
         fatalError("Row template for compound type row not found (any/all/not)")
       }
       
-      configureCompoundTypesCell(cell, rowTemplate: rowTemplate)
+      // configureCompoundTypesCell(cell, rowTemplate: rowTemplate)
+      let configuration = UIPredicateEditorCellConfiguration(
+        rowTemplate: rowTemplate,
+        traitCollection: cell.traitCollection,
+        isEditable: self.isEditable,
+        indentationLevel: 0
+      )
       
-      return cell
+      cell.contentConfiguration = configuration
+    }
+    else {
+      let rowTemplate = requiredRowTemplates[indexPath.item]
+      rowTemplate.formattingDictionary = formattingDictionary
+      #if DEBUG
+      print("UIPredicateEditorViewController: will use template: \(rowTemplate) for indexPath: \(indexPath)")
+      #endif
+      
+      let configuration = UIPredicateEditorCellConfiguration(
+        rowTemplate: rowTemplate,
+        traitCollection: cell.traitCollection,
+        isEditable: self.isEditable,
+        indentationLevel: rowTemplate.indentationLevel
+      )
+      
+      configuration.delegate = cell
+      
+      cell.contentConfiguration = configuration
     }
     
-    let rowTemplate = requiredRowTemplates[indexPath.item]
-    rowTemplate.formattingDictionary = formattingDictionary
-    #if DEBUG
-    print("UIPredicateEditorViewController: will use template: \(rowTemplate) for indexPath: \(indexPath)")
-    #endif
-    
-    let configuration = UIPredicateEditorCellConfiguration(
-      rowTemplate: rowTemplate,
-      traitCollection: cell.traitCollection,
-      isEditable: self.isEditable,
-      indentationLevel: rowTemplate.indentationLevel
-    )
-    
     let backgroundConfiguration = UIBackgroundConfiguration.listGroupedCell()
-    
-    cell.contentConfiguration = configuration
     cell.backgroundConfiguration = backgroundConfiguration
-    
-    configuration.delegate = cell
     
     return cell
   }
@@ -261,7 +266,6 @@ open class UIPredicateEditorViewController: UICollectionViewController {
         self.predicateController.deleteRowTemplate(at: index)
         self.refreshContentView()
         
-        self.refreshContentView()
         self.collectionView.reloadData()
       }
     
@@ -295,7 +299,6 @@ extension UIPredicateEditorViewController {
   ///   - cell: cell to configure views on
   ///   - rowTemplate: the row template to fetch views from 
   public func configureCompoundTypesCell(_ cell: UIPredicateEditorBaseCell, rowTemplate: UIPredicateEditorRowTemplate) {
-    
     let backgroundConfiguration = UIBackgroundConfiguration.listGroupedCell()
     cell.backgroundConfiguration = backgroundConfiguration
     
@@ -373,29 +376,39 @@ extension UIPredicateEditorViewController {
       }
     }.reduce([], +)
     
-    if parentRowTemplate == nil,
-       rowTemplates.first(where: { row in
-         guard let predicate = row.predicate else {
-           return false
-         }
-         
-         let format = predicate.predicateFormat.lowercased()
-         
-         return format.contains("and") || format.contains("or")
-       }) != nil {
+//    if parentRowTemplate == nil,
+//       rowTemplates.first(where: { row in
+//         guard let predicate = row.predicate else {
+//           return false
+//         }
+//         
+//         let format = predicate.predicateFormat.lowercased()
+//         
+//         return format.contains("and") || format.contains("or")
+//       }) != nil {
       // allow adding a new combo row
       let comboAction = UIAction(
         title: NSLocalizedString("Combination", comment: "")) { [weak self] _ in
           #if DEBUG
           print("UIPredicateEditorViewController: footer menu: adding a new combination row")
           #endif
-          guard let _ = self else { return }
+          guard let self else { return }
           
           // @TODO: Add a new combo row with a child row
+          let template = UIPredicateEditorRowTemplate(compoundTypes: [.and, .or, .not])
+          template.ID = UUID()
+          
+          if let parentRowTemplate,
+             let parentTemplateID = parentRowTemplate.ID {
+            template.parentTemplateID = parentTemplateID
+          }
+          
+          self.predicateController.addRowTemplate(template)
+          self.collectionView.reloadData()
         }
       
       actions.append(comboAction)
-    }
+//    }
     
     return actions
   }

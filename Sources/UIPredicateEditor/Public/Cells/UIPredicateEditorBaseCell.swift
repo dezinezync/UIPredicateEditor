@@ -16,8 +16,11 @@ open class UIPredicateEditorBaseCell: UICollectionViewCell {
   
   /// Called by the controller when the cell is about to be used for presentation
   open func prepareForUse() {
+    super.prepareForReuse()
+    
     // remove existing subviews
     for view in contentView.subviews {
+      NSLayoutConstraint.deactivate(view.constraints)
       view.removeFromSuperview()
     }
   }

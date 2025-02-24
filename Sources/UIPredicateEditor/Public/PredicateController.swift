@@ -220,9 +220,13 @@ public final class PredicateController {
       templateCopy.setPredicate(predicate)
     }
     
-    requiredRowTemplates.append(templateCopy)
+    addRowTemplate(templateCopy)
     
     return true
+  }
+  
+  public func addRowTemplate(_ rowTemplate: UIPredicateEditorRowTemplate) {
+    requiredRowTemplates.append(rowTemplate)
   }
   
   /// Deletes the row template at the specified index.

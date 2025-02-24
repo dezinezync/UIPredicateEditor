@@ -9,11 +9,10 @@ The plan is to have a 1:1 API implementation so implementing it in cross-platfor
 ### TODO:
  
 - [ ] Missing implementations 
-- [ ] iOS 13 support
 - [ ] Localizations 
 - [ ] Test Suites      
 - [ ] Additional Documentation (where missing)
-- [ ] Sample Projects 
+- [ ] Sample Project
 
 ### License
 MIT License, see the `LICENSE` file for more details. 
