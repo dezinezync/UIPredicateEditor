@@ -308,7 +308,7 @@ import CoreData
   }
   
   public func logicalTypeForCurrentState() -> NSCompoundPredicate.LogicalType {
-    if let selected = self.compoundTypesButton.menu?.uiSelectedElements.first as? UIAction {
+    if let selected = self.compoundTypesButton.menu?.selectedElements.first as? UIAction {
       if selected.title == NSCompoundPredicate.LogicalType.and.localizedTitle {
         return .and
       }
@@ -344,7 +344,7 @@ import CoreData
     let leftExpressionView = views[0]
     
     if let button = leftExpressionView as? UIButton,
-       let item = button.menu?.uiSelectedElements.first as? UIAction {
+       let item = button.menu?.selectedElements.first as? UIAction {
       
       var title = item.title
       
@@ -364,7 +364,7 @@ import CoreData
     let operatorView = views[1]
     
     if let operatorButton = operatorView as? UIButton,
-       let item = operatorButton.menu?.uiSelectedElements.first as? UIAction {
+       let item = operatorButton.menu?.selectedElements.first as? UIAction {
       predicateOperator = NSComparisonPredicate.Operator.from(item.title)
     }
     
@@ -372,7 +372,7 @@ import CoreData
       let rightExpressionView = views[2]
       
       if let rightExpressionView = rightExpressionView as? UIButton,
-         let item = rightExpressionView.menu?.uiSelectedElements.first as? UIAction {
+         let item = rightExpressionView.menu?.selectedElements.first as? UIAction {
         
         var title = item.title
         

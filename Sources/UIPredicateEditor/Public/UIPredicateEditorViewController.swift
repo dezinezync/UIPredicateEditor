@@ -453,7 +453,7 @@ extension UIPredicateEditorViewController: UIPredicateEditorContentRefreshing {
           let firstAncestor = cell.contentView.subviews.first,
           !firstAncestor.subviews.isEmpty,
           let button = firstAncestor.subviews[0] as? UIButton,
-          let action = button.menu?.uiSelectedElements.first as? UIAction else {
+          let action = button.menu?.selectedElements.first as? UIAction else {
       return
     }
     
