@@ -7,6 +7,12 @@
 
 import Foundation
 
+private let internalDateFormatter: DateFormatter = {
+  let formatter = DateFormatter()
+  formatter.dateStyle = .short
+  return formatter
+}()
+
 extension NSExpression {
   var stringValue: String? {
     switch expressionType {
@@ -16,19 +22,7 @@ extension NSExpression {
         return value
       }
       
-      if let value = value as? Int {
-        return "\(value)"
-      }
-      
-      if let value = value as? Int16 {
-        return "\(value)"
-      }
-      
-      if let value = value as? Int32 {
-        return "\(value)"
-      }
-      
-      if let value = value as? Int64 {
+      if let value = value as? any BinaryInteger {
         return "\(value)"
       }
       
@@ -36,26 +30,20 @@ extension NSExpression {
         return "\(value)"
       }
       
-      if let value = value as? Float {
-        return "\(value)"
-      }
-      
-      if let value = value as? Double {
+      if let value = value as? any BinaryFloatingPoint {
         return "\(value)"
       }
       
       if let value = value as? Bool {
-        return value ? NSLocalizedString("True", comment: "") : NSLocalizedString("False", comment: "")
+        return value ? NSLocalizedString("True", bundle: .module, comment: "Boolean true value") : NSLocalizedString("False", bundle: .module, comment: "Boolean false value")
       }
       
       if let value = value as? Date {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .short
-        return formatter.string(from: value)
+        return internalDateFormatter.string(from: value)
       }
       
       if value is NSNull {
-        return "null"
+        return NSLocalizedString("null", bundle: .module, comment: "Null value")
       }
       
       return nil
