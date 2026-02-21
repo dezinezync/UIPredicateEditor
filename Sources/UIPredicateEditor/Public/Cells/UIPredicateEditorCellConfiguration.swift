@@ -54,7 +54,7 @@ open class UIPredicateEditorCellConfiguration: UIContentConfiguration, Equatable
   
 }
 
-public protocol UIPredicateEditorContentRefreshing: NSObject {
+@MainActor public protocol UIPredicateEditorContentRefreshing: NSObject {
   func refreshContentView()
 }
 

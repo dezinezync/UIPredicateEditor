@@ -8,8 +8,7 @@
 #if os(iOS)
 import Foundation
 
-public extension Notification.Name {
-  
+public extension Notification.Name {  
   /// Notified when the predicate of the `UIPredicateEditor` changes.
   ///
   /// The `object` on the `Notification` will be the editor.
@@ -21,7 +20,7 @@ public extension Notification.Name {
 /// The `UIPRedicateEditorViewController` class uses it internally for its predicate operations.
 ///
 /// You may choose to write your own view and use the `PredicateController` as its driving model.
-public final class PredicateController {
+@MainActor public final class PredicateController {
   /// contains the predicate evaluated by the editor.
   ///
   /// If one or more parts cannot be queried from the row templates, the property evaluates to `nil`.

@@ -15,7 +15,7 @@ import CoreData
 /// A template that describes available predicates and how to display them.
 ///
 /// By default, a noncompound row template has three views: a popup (or static text field) on the left, a popup or static text field for operators, and either a popup or other view on the right.  You can subclass `UIPredicateEditorRowTemplate` to create a row template with different numbers or types of views.
-open class UIPredicateEditorRowTemplate: NSObject {
+@MainActor open class UIPredicateEditorRowTemplate: NSObject {
   
   /// An array of ``NSExpression`` objects that represent the left side of a predicate.
   public let leftExpressions: [NSExpression]
@@ -723,7 +723,7 @@ open class UIPredicateEditorRowTemplate: NSObject {
 
 // MARK: - Copying
 
-extension UIPredicateEditorRowTemplate: NSCopying {
+extension UIPredicateEditorRowTemplate: @MainActor NSCopying {
   open func copy(with zone: NSZone? = nil) -> Any {
     UIPredicateEditorRowTemplate(from: self)
   }
@@ -749,7 +749,18 @@ extension UIPredicateEditorRowTemplate: UITextFieldDelegate {
 extension UIPredicateEditorRowTemplate {
   open override var description: String {
     let inherit = super.description
-    let meta = ", predicate: \(self.predicate?.predicateFormat ?? "no predicate"), view count: \(templateViews.count), ID: \(String(describing: ID)), parentID: \(String(describing: parentTemplateID))"
+    var meta: String = ""
+    
+    if Thread.isMainThread {
+      MainActor.assumeIsolated({
+        meta = ", predicate: \(self.predicate?.predicateFormat ?? "no predicate"), view count: \(templateViews.count), ID: \(String(describing: ID)), parentID: \(String(describing: parentTemplateID))"
+      })
+    }
+    else {
+      DispatchQueue.main.sync {
+        meta = ", predicate: \(self.predicate?.predicateFormat ?? "no predicate"), view count: \(templateViews.count), ID: \(String(describing: ID)), parentID: \(String(describing: parentTemplateID))"
+      }
+    }
     
     return inherit + meta
   }

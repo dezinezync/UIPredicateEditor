@@ -8,7 +8,7 @@
 #if os(iOS)
 import UIKit
 
-public protocol UIPredicateEditorRefreshing: NSObject {
+@MainActor public protocol UIPredicateEditorRefreshing: NSObject {
   func reconfigure(_ cell: UIPredicateEditorBaseCell)
 }
 
@@ -124,7 +124,7 @@ open class UIPredicateEditorViewController: UICollectionViewController {
         let index = indexPath.item
         
         self.predicateController.deleteRowTemplate(at: index)
-        self.predicateController.updatePredicate(for: self.rowTemplates.first(where: { $0.compoundTypes != nil })!.logicalType)
+        self.predicateController.updatePredicate(for: self.rowTemplates.first(where: { !$0.compoundTypes.isEmpty })!.logicalType)
         
         self.refreshContentView()
         
@@ -231,7 +231,7 @@ open class UIPredicateEditorViewController: UICollectionViewController {
       cell.contentConfiguration = configuration
     }
     
-    let backgroundConfiguration = UIBackgroundConfiguration.listGroupedCell()
+    let backgroundConfiguration = UIBackgroundConfiguration.listCell()
     cell.backgroundConfiguration = backgroundConfiguration
     
     return cell
@@ -305,7 +305,7 @@ extension UIPredicateEditorViewController {
   ///   - cell: cell to configure views on
   ///   - rowTemplate: the row template to fetch views from 
   public func configureCompoundTypesCell(_ cell: UIPredicateEditorBaseCell, rowTemplate: UIPredicateEditorRowTemplate) {
-    let backgroundConfiguration = UIBackgroundConfiguration.listGroupedCell()
+    let backgroundConfiguration = UIBackgroundConfiguration.listCell()
     cell.backgroundConfiguration = backgroundConfiguration
     
     cell.prepareForUse()
