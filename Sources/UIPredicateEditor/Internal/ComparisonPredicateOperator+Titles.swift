@@ -86,36 +86,17 @@ extension NSComparisonPredicate.Operator {
     return NSLocalizedString(title, bundle: .module, comment: title)
   }
   
+  static let allCases: [NSComparisonPredicate.Operator] = [
+    .lessThan, .lessThanOrEqualTo, .greaterThan, .greaterThanOrEqualTo,
+    .equalTo, .notEqualTo, .matches, .like, .beginsWith, .endsWith,
+    .in, .contains, .between
+  ]
+  
   static func from(_ localizedTitle: String) -> NSComparisonPredicate.Operator {
-    switch localizedTitle {
-    case NSLocalizedString("is less than", bundle: .module, comment: "less than"):
-      return .lessThan
-    case NSLocalizedString("is less than or equal to", bundle: .module, comment: "less than or equal to"):
-      return .lessThanOrEqualTo
-    case NSLocalizedString("is greater than", bundle: .module, comment: "greater than"):
-      return .greaterThan
-    case NSLocalizedString("is greater than or equal to", bundle: .module, comment: "greater than or equal to"):
-      return .greaterThanOrEqualTo
-    case NSLocalizedString("is", bundle: .module, comment: "is"):
-      return .equalTo
-    case NSLocalizedString("is not", bundle: .module, comment: "is not"):
-      return .notEqualTo
-    case NSLocalizedString("matches", bundle: .module, comment: "matches"):
-      return .matches
-    case NSLocalizedString("like", bundle: .module, comment: "like"):
-      return .like
-    case NSLocalizedString("begins with", bundle: .module, comment: "begins with"):
-      return .beginsWith
-    case NSLocalizedString("ends with", bundle: .module, comment: "ends with"):
-      return .endsWith
-    case NSLocalizedString("in", bundle: .module, comment: "in"):
-      return .in
-    case NSLocalizedString("contains", bundle: .module, comment: "contains"):
-      return .contains
-    case NSLocalizedString("between", bundle: .module, comment: "between"):
-      return .between
-    default:
-      fatalError("Unknown operator")
+    if let match = allCases.first(where: { $0.localizedTitle == localizedTitle }) {
+      return match
     }
+    
+    fatalError("Unknown operator: \(localizedTitle)")
   }
 }
