@@ -7,6 +7,7 @@
 
 #if os(iOS)
 import UIKit
+import Observation
 
 @MainActor public protocol UIPredicateEditorRefreshing: NSObject {
   func reconfigure(_ cell: UIPredicateEditorBaseCell)
@@ -16,7 +17,7 @@ import UIKit
 ///
 /// It's `open` by default, encourgaging subclassing, but can be used as is.
 ///
-/// Similar to its `NS` counterpart, it directly queries rows to be displayed based on its `objectValue`, an instance of `NSPredicate`, and matching rows from `rowTemplates`, and array of `UIPredicateEditorRowTemplate`.
+/// Similar to its `NSPredicateEditor` counterpart, it directly queries rows to be displayed based on its `objectValue`, an instance of `NSPredicate`, and matching rows from `rowTemplates`, and array of `UIPredicateEditorRowTemplate`.
 open class UIPredicateEditorViewController: UICollectionViewController {
   
   public let predicateController = PredicateController()
@@ -26,7 +27,7 @@ open class UIPredicateEditorViewController: UICollectionViewController {
   /// If one or more parts cannot be queried from the row templates, the property evaluates to `nil`.
   /// Should be set on initialization to pre-populate initial rows.
   public var predicate: NSPredicate {
-    get { predicateController.predicate }
+    get { predicateController.predicate ?? NSPredicate(value: true) }
     set { predicateController.predicate = newValue }
   }
   
@@ -111,7 +112,7 @@ open class UIPredicateEditorViewController: UICollectionViewController {
     UIPredicateEditorBaseCell.register(on: collectionView)
     UIPredicateEditorFooterView.register(on: collectionView)
     
-    let layout = UIPredicateEditorLayout.preparedLayout { [weak self] indexPath in
+    let layout = UIPredicateEditorLayout.preparedLayout(trailingSwipeActionsConfigurationProvider: { [weak self] indexPath in
       guard indexPath.section > 0 else {
         return nil
       }
@@ -124,23 +125,50 @@ open class UIPredicateEditorViewController: UICollectionViewController {
         let index = indexPath.item
         
         self.predicateController.deleteRowTemplate(at: index)
-        self.predicateController.updatePredicate(for: self.rowTemplates.first(where: { !$0.compoundTypes.isEmpty })!.logicalType)
+        self.predicateController.updatePredicateFromCurrentState()
         
         self.refreshContentView()
-        
-        self.collectionView.reloadData()
         
         completion(true)
       })
       deleteAction.image = UIImage(systemName: "trash")
       
       return UISwipeActionsConfiguration(actions: [deleteAction])
-    }
+    }, itemSeparatorHandler: nil)/*{ [weak self] indexPath, config in
+      guard let self else {
+        return config
+      }
+      
+      guard indexPath.item < rowTemplates.count else {
+        return config
+      }
+      
+      var updatedConfig = config
+      
+      let indentation = rowTemplates[indexPath.item].indentationLevel
+      // @TODO: The 12pt value should be instead taken from the cell
+      let leadingEdge = CGFloat(indentation * 12)
+      
+      updatedConfig.bottomSeparatorInsets = NSDirectionalEdgeInsets(top: 0, leading: leadingEdge, bottom: 0, trailing: leadingEdge * -1)
+      return updatedConfig
+    })*/
     
     collectionView.setCollectionViewLayout(layout, animated: false)
     
     // reload the predicate and update the view
     reloadPredicate()
+    setupObservation()
+  }
+  
+  private func setupObservation() {
+    withObservationTracking {
+      _ = predicateController.requiredRowTemplates
+    } onChange: { [weak self] in
+      Task { @MainActor in
+        self?.collectionView.reloadData()
+        self?.setupObservation()
+      }
+    }
   }
   
   open override func viewDidAppear(_ animated: Bool) {
@@ -196,7 +224,7 @@ open class UIPredicateEditorViewController: UICollectionViewController {
     cell.refreshDelegate = self
     
     if indexPath.section == 0 {
-      // compound types row
+      // Compound types row
       guard let rowTemplate = rowTemplates.first(where: { !$0.compoundTypes.isEmpty }) else {
         fatalError("Row template for compound type row not found (any/all/not)")
       }
@@ -353,7 +381,7 @@ extension UIPredicateEditorViewController {
   
   private func addRowTemplate(for leftExpressionTitle: String, parentRowTemplate: UIPredicateEditorRowTemplate? = nil) {
     if predicateController.addRowTemplate(for: leftExpressionTitle, for: parentRowTemplate) {
-      collectionView.reloadData()
+      // collectionView.reloadData()
     }
   }
   
@@ -382,39 +410,29 @@ extension UIPredicateEditorViewController {
       }
     }.reduce([], +)
     
-//    if parentRowTemplate == nil,
-//       rowTemplates.first(where: { row in
-//         guard let predicate = row.predicate else {
-//           return false
-//         }
-//         
-//         let format = predicate.predicateFormat.lowercased()
-//         
-//         return format.contains("and") || format.contains("or")
-//       }) != nil {
-      // allow adding a new combo row
-      let comboAction = UIAction(
-        title: NSLocalizedString("Combination", comment: "")) { [weak self] _ in
-          #if DEBUG
-          print("UIPredicateEditorViewController: footer menu: adding a new combination row")
-          #endif
-          guard let self else { return }
-          
-          // @TODO: Add a new combo row with a child row
-          let template = UIPredicateEditorRowTemplate(compoundTypes: [.and, .or, .not])
-          template.ID = UUID()
-          
-          if let parentRowTemplate,
-             let parentTemplateID = parentRowTemplate.ID {
-            template.parentTemplateID = parentTemplateID
-          }
-          
-          self.predicateController.addRowTemplate(template)
-          self.collectionView.reloadData()
+      // Allow adding a new combo row
+    let comboAction = UIAction(
+      title: NSLocalizedString("Combination", comment: "")) { [weak self] _ in
+#if DEBUG
+        print("UIPredicateEditorViewController: footer menu: adding a new combination row")
+#endif
+        guard let self else { return }
+        
+        // @TODO: Add a new combo row with a child row
+        let template = UIPredicateEditorRowTemplate(compoundTypes: [.and, .or, .not])
+        template.ID = UUID()
+        
+        if let parentRowTemplate,
+           let parentTemplateID = parentRowTemplate.ID {
+          template.parentTemplateID = parentTemplateID
+          template.indentationLevel = parentRowTemplate.indentationLevel + 1
         }
-      
-      actions.append(comboAction)
-//    }
+        
+        self.predicateController.addRowTemplate(template)
+        self.collectionView.reloadData()
+      }
+    
+    actions.append(comboAction)
     
     return actions
   }
@@ -431,12 +449,7 @@ extension UIPredicateEditorViewController: UIPredicateEditorRefreshing {
       return
     }
     
-    if #available(iOS 15, macCatalyst 15.0, *) {
-      collectionView.reconfigureItems(at: [indexPath])
-    }
-    else {
-      collectionView.reloadItems(at: [indexPath])
-    }
+    collectionView.reconfigureItems(at: [indexPath])
     
     refreshContentView()
   }
@@ -447,25 +460,7 @@ extension UIPredicateEditorViewController: UIPredicateEditorContentRefreshing {
   
   /// refresh the predicate and thereby the controller's view
   public func refreshContentView() {
-    // only called for the compund type predicate
-    guard let cell = collectionView.cellForItem(at: IndexPath(item: 0, section: 0)),
-          !cell.contentView.subviews.isEmpty,
-          let firstAncestor = cell.contentView.subviews.first,
-          !firstAncestor.subviews.isEmpty,
-          let button = firstAncestor.subviews[0] as? UIButton,
-          let action = button.menu?.selectedElements.first as? UIAction else {
-      return
-    }
-    
-    if action.title == NSCompoundPredicate.LogicalType.or.localizedTitle {
-      predicateController.updatePredicate(for: .or)
-    }
-    else if action.title == NSCompoundPredicate.LogicalType.not.localizedTitle {
-      predicateController.updatePredicate(for: .not)
-    }
-    else {
-      predicateController.updatePredicate(for: .and)
-    }
+    predicateController.updatePredicateFromCurrentState()
   }
 }
 #endif

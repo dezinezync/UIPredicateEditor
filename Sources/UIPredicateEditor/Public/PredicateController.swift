@@ -7,8 +7,14 @@
 
 #if os(iOS)
 import Foundation
+import Observation
 
-public extension Notification.Name {  
+public extension Notification.Name {
+  /// Notified when the predicate of the `UIPredicateEditor`will change.
+  ///
+  /// The `object` on the `Notification` will be the editor.
+  static let predicateWillChange = Notification.Name(rawValue: "UIPredicateEditor.predicateWillChange")
+  
   /// Notified when the predicate of the `UIPredicateEditor` changes.
   ///
   /// The `object` on the `Notification` will be the editor.
@@ -20,37 +26,46 @@ public extension Notification.Name {
 /// The `UIPRedicateEditorViewController` class uses it internally for its predicate operations.
 ///
 /// You may choose to write your own view and use the `PredicateController` as its driving model.
-@MainActor public final class PredicateController {
+@MainActor
+@Observable
+public final class PredicateController {
   /// contains the predicate evaluated by the editor.
   ///
   /// If one or more parts cannot be queried from the row templates, the property evaluates to `nil`.
   /// Should be set on initialization to pre-populate initial rows.
-  @objc dynamic public var predicate: NSPredicate!
+  public var predicate: NSPredicate?
   
   /// Row templates to be used by the receiver.
   ///
   /// These should correspond to the predicate the editor is currently editing.
   /// The number of row templates should match the number of options available to the user.
   /// These are never used directly, and instead copies are maintained.
-  @objc dynamic public var rowTemplates: [UIPredicateEditorRowTemplate] = []
+  public var rowTemplates: [UIPredicateEditorRowTemplate] = []
   
   /// The formatting dictionary for the rule editor.
   ///
   /// If you assign a new the formatting dictionary to this property, it sets the current to formatting strings file name to `nil`.
-  @objc dynamic public var formattingDictionary: [String: String]?
+  public var formattingDictionary: [String: String]?
   
   /// The name of the rule editor’s strings file.
   ///
   /// The `UIPredicateEditor` class looks for a strings file with the given name in the main bundle. If it finds a strings file resource with the given name, `UIPredicateEditor` loads it and sets it as the formatting dictionary for the receiver. You can obtain the resulting dictionary using the `formattingDictionary` property.
   ///
   /// If you assign a new dictionary to the `formattingDictionary` property, it sets the current to formatting strings file name to `nil`.
-  @objc dynamic public var formattingStringsFilename: String?
-  // @TODO: Implementation pending
+  public var formattingStringsFilename: String? {
+    didSet {
+      if let filename = formattingStringsFilename,
+         let url = Bundle.main.url(forResource: filename, withExtension: "strings"),
+         let dict = NSDictionary(contentsOf: url) as? [String: String] {
+        self.formattingDictionary = dict
+      }
+    }
+  }
   
   /// Internal copy of row templates, which will be used to populate the  view.
   ///
   /// Each row will have its own predicate which is used to form the predicate on the `UIPredicateEditor`.
-  @objc dynamic public var requiredRowTemplates: [UIPredicateEditorRowTemplate] = []
+  public var requiredRowTemplates: [UIPredicateEditorRowTemplate] = []
   
   /// Created on-demand everytime as the formatting dictionary may change during runtime
   internal var formattingHelper: FormattingDictionaryHelper {
@@ -113,13 +128,20 @@ public extension Notification.Name {
   ///
   /// When predicates of row templates change, this is invoked automatically.
   public func reloadPredicate() {
-    let subpredicates = self.subpredicates
-    
-    let matchingRowTemplates = subpredicates.map { predicate -> [UIPredicateEditorRowTemplate] in
-      rowTemplates(for: predicate)
+    guard let predicate = self.predicate else {
+      self.requiredRowTemplates = []
+      return
     }
     
-    self.requiredRowTemplates = Array(matchingRowTemplates.joined())
+    // We treat the top-level predicate as the root of our recursive structure.
+    // If it's a compound predicate, we build the tree.
+    // If it's a simple predicate, we wrap it or handle it as a single row.
+    
+    // The existing logic assumed subpredicates property existed on PredicateController
+    // which extracted subpredicates from self.predicate.
+    
+    // Let's rebuild the rows from scratch based on the current predicate.
+    self.requiredRowTemplates = rowTemplates(for: predicate)
   }
   
   /// Notifies the receiver that the logical type for its predicate has changed.
@@ -131,57 +153,18 @@ public extension Notification.Name {
       notifyPredicateWillChange()
     }
     
-    // List of predicates forming the final compound predicate.
-    // This may contain a mix of normal and compound predicates.
-    var predicates: [NSPredicate] = []
-    
-    let upperIndex = requiredRowTemplates.count
-    var index: Int = 0
-    
-    while (index < upperIndex) {
-      defer { index += 1 }
-      
-      let template = requiredRowTemplates[index]
-      
-      // top level row, use its predicate as-is
-      if template.ID == nil, let predicate = template.predicate {
-        predicates.append(predicate)
-        continue
+    // We assume the first row is the root container if available.
+    // If we have no rows, we have no predicate.
+    guard let rootRow = requiredRowTemplates.first else {
+      self.predicate = nil
+      Task { @MainActor in
+        notifyPredicateDidChange()
       }
-      
-      if #available(iOS 14.0, macCatalyst 14.0, *) {
-        if let uid = template.ID {
-          let logicalType = template.logicalTypeForCurrentState()
-          
-          // assemble all child templates matching the parent's ID
-          // and use their predicates as the subpredicates for the
-          // compound predicate formed by this set.
-          var childTemplates: [UIPredicateEditorRowTemplate] = []
-          for subTemplate in requiredRowTemplates[index...] {
-            if subTemplate.parentTemplateID != uid {
-              continue
-            }
-            
-            childTemplates.append(subTemplate)
-            
-            // increment the counter as we no longer need to process this row
-            index += 1
-          }
-          
-          let subPredicates = childTemplates.compactMap { $0.predicate }
-          let compoundPredicate = NSCompoundPredicate(type: logicalType, subpredicates: subPredicates)
-          
-          predicates.append(compoundPredicate)
-        }
-      }
+      return
     }
     
-    let compoundPredicate = NSCompoundPredicate(
-      type: logicalType,
-      subpredicates: predicates
-    )
-    
-    self.predicate = compoundPredicate
+    // Recursively rebuild the predicate starting from the root row.
+    self.predicate = buildRecursivePredicate(from: rootRow)
     
     Task { @MainActor in
       notifyPredicateDidChange()
@@ -212,7 +195,7 @@ public extension Notification.Name {
     
     let templateCopy = matchedTemplate.copy() as! UIPredicateEditorRowTemplate
     
-    if let parentRow = parentRow {
+    if let parentRow {
       templateCopy.parentTemplateID = parentRow.ID
       templateCopy.indentationLevel = parentRow.indentationLevel + 1
     }
@@ -228,12 +211,34 @@ public extension Notification.Name {
   }
   
   public func addRowTemplate(_ rowTemplate: UIPredicateEditorRowTemplate) {
-    requiredRowTemplates.append(rowTemplate)
+    if let parentID = rowTemplate.parentTemplateID,
+       let parentIndex = requiredRowTemplates.firstIndex(where: { $0.ID == parentID }) {
+      
+      let parentIndentation = requiredRowTemplates[parentIndex].indentationLevel
+      var insertionIndex = parentIndex + 1
+      
+      // Find the end of the parent's subtree by looking for the next item
+      // with an indentation level less than or equal to the parent.
+      while insertionIndex < requiredRowTemplates.count &&
+            requiredRowTemplates[insertionIndex].indentationLevel > parentIndentation {
+        insertionIndex += 1
+      }
+      
+      requiredRowTemplates.insert(rowTemplate, at: insertionIndex)
+    } else {
+      // If no parent, append to the end as per NSPredicateEditor behavior.
+      requiredRowTemplates.append(rowTemplate)
+    }
+    
+    // If we added a row, we should probably update the predicate to include it.
+    if let rootRow = requiredRowTemplates.first, !rootRow.compoundTypes.isEmpty {
+      updatePredicate(for: rootRow.logicalTypeForCurrentState())
+    }
   }
   
   /// Deletes the row template at the specified index.
   ///
-  /// If the row template is a Parent row, all its child row templates are also deleted.
+  /// If the row template is a Parent row, all its child row templates are also deleted recursively.
   ///
   /// Call `updatePredicate(for:)` to update the predicate after deleting a row.
   /// - Parameter index: the index of the row template
@@ -242,16 +247,51 @@ public extension Notification.Name {
       return
     }
     
-    let rowTemplate = requiredRowTemplates.remove(at: index)
-    if let templateID = rowTemplate.ID {
-      // also remove all child rows associated with this template
-      requiredRowTemplates = requiredRowTemplates.filter { $0.parentTemplateID != templateID }
+    let rowToDelete = requiredRowTemplates[index]
+    var rowsToDelete: Set<UIPredicateEditorRowTemplate> = [rowToDelete]
+    
+    // If the row acts as a parent (has an ID), find all descendants
+    if let parentID = rowToDelete.ID {
+      var stack: [UUID] = [parentID]
+      
+      while !stack.isEmpty {
+        let currentParentID = stack.removeLast()
+        
+        // Find immediate children of this parent
+        let children = requiredRowTemplates.filter { $0.parentTemplateID == currentParentID }
+        
+        for child in children {
+          rowsToDelete.insert(child)
+          // If this child is also a parent, add to stack
+          if let childID = child.ID {
+            stack.append(childID)
+          }
+        }
+      }
     }
+    
+    requiredRowTemplates.removeAll { rowsToDelete.contains($0) }
+    
+    // If we deleted the root row, clear everything?
+    if requiredRowTemplates.isEmpty {
+        self.predicate = nil
+    } else if let rootRow = requiredRowTemplates.first, !rootRow.compoundTypes.isEmpty {
+        updatePredicate(for: rootRow.logicalTypeForCurrentState())
+    }
+  }
+  
+  /// Helper to update the master predicate based on the current UI state of the root row (Any/All/None).
+  public func updatePredicateFromCurrentState() {
+    guard let rootRow = requiredRowTemplates.first, !rootRow.compoundTypes.isEmpty else {
+      return
+    }
+    updatePredicate(for: rootRow.logicalTypeForCurrentState())
   }
   
   // MARK: Notify
   @MainActor internal func notifyPredicateWillChange() {
     // @TODO: Refactor to call delegate
+    NotificationCenter.default.post(name: .predicateWillChange, object: self)
   }
   
   @MainActor internal func notifyPredicateDidChange() {
@@ -260,19 +300,31 @@ public extension Notification.Name {
   }
   
   // MARK: Internal
-  internal var subpredicates: [NSPredicate] {
-    subpredicates(for: predicate)
-  }
   
-  private func subpredicates(for predicate: NSPredicate) -> [NSPredicate] {
-    if let predicate = predicate as? NSCompoundPredicate {
-      return predicate.subpredicates.compactMap { $0 as? NSPredicate }
-    }
-    else if predicate.predicateFormat.isEmpty {
-      return []
+  /// Recursively builds a predicate tree from the row templates.
+  private func buildRecursivePredicate(from row: UIPredicateEditorRowTemplate) -> NSPredicate? {
+    // If it's a leaf node (comparison), return its predicate directly
+    if row.compoundTypes.isEmpty {
+      return row.predicateForCurrentState()
     }
     
-    return [predicate]
+    // It's a compound node.
+    guard let rowID = row.ID else { return nil }
+    
+    let logicalType = row.logicalTypeForCurrentState()
+    
+    // Find direct children of this row
+    let children = requiredRowTemplates.filter { $0.parentTemplateID == rowID }
+    
+    var subpredicates: [NSPredicate] = []
+    
+    for child in children {
+      if let childPredicate = buildRecursivePredicate(from: child) {
+        subpredicates.append(childPredicate)
+      }
+    }
+    
+    return NSCompoundPredicate(type: logicalType, subpredicates: subpredicates)
   }
   
   private func rowTemplates(for predicate: NSPredicate, indentationLevel: Int = 0) -> [UIPredicateEditorRowTemplate] {
@@ -283,11 +335,11 @@ public extension Notification.Name {
       
       var templates: [UIPredicateEditorRowTemplate] = []
       
+      // Find the best matching template for the compound predicate itself (usually Any/All/None)
       guard let operatorTemplate: UIPredicateEditorRowTemplate = rowTemplates.reduce(nil, { partialResult, template in
         if template.match(for: predicate) > partialResult?.match(for: predicate) ?? 0 {
           return template
         }
-        
         return partialResult
       }) else {
         return []
@@ -299,6 +351,10 @@ public extension Notification.Name {
       if indentationLevel > 0 {
         operatorTemplateCopy.indentationLevel = indentationLevel - 1
       }
+      
+      // Important: Update the view state (dropdown selection) to match the logical type
+      // This is implicit in setPredicate but ensuring consistency here.
+      operatorTemplateCopy.setPredicate(predicate)
       
       templates.append(operatorTemplateCopy)
       
@@ -317,11 +373,11 @@ public extension Notification.Name {
       return templates
     }
     
+    // Leaf node (Comparison)
     guard let firstMatch: UIPredicateEditorRowTemplate = rowTemplates.reduce(nil, { partialResult, template in
       if template.match(for: predicate) > partialResult?.match(for: predicate) ?? 0 {
         return template
       }
-      
       return partialResult
     }) else {
       return []

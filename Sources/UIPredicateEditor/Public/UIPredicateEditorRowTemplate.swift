@@ -51,15 +51,22 @@ import CoreData
   ///
   /// This list matches the current `predicate` setup on the template.
   /// This value is only available on the template row copies and never the original template rows. 
-  var formattingDictionary: [String: String]?
-  
-  lazy var formattingHelper: FormattingDictionaryHelper? = {
-    guard let formattingDictionary = formattingDictionary else {
-      return nil
+  var formattingDictionary: [String: String]? {
+    didSet {
+      _formattingHelper = nil
     }
+  }
+  
+  private var _formattingHelper: FormattingDictionaryHelper?
+  
+  var formattingHelper: FormattingDictionaryHelper? {
+    if let helper = _formattingHelper { return helper }
+    guard let formattingDictionary else { return nil }
 
-    return FormattingDictionaryHelper(formattingDictionary: formattingDictionary)
-  }()
+    let helper = FormattingDictionaryHelper(formattingDictionary: formattingDictionary)
+    _formattingHelper = helper
+    return helper
+  }
   
   // MARK: Relationships
   
@@ -372,8 +379,7 @@ import CoreData
       let rightExpressionView = views[2]
       
       if let rightExpressionView = rightExpressionView as? UIButton,
-         let item = rightExpressionView.menu?.selectedElements.first as? UIAction {
-        
+         let item = rightExpressionView.menu?.selectedElements.first as? UIAction {        
         var title = item.title
         
         // we may have localized this title
@@ -385,7 +391,6 @@ import CoreData
         rightExpression = NSExpression(forConstantValue: title)
       }
       else if let textField = rightExpressionView as? UITextField {
-        
         if textField.keyboardType == .URL,
            let url = URL(string: textField.text ?? "") {
           rightExpression = NSExpression(forConstantValue: url)
@@ -496,28 +501,23 @@ import CoreData
       button.isEnabled = false
     }
     
-    if #available(iOS 15, macCatalyst 15.0, *) {
-      button.changesSelectionAsPrimaryAction = true
-      button.showsMenuAsPrimaryAction = actions.count > 1
-      button.isEnabled = actions.count > 1
+    button.changesSelectionAsPrimaryAction = true
+    button.showsMenuAsPrimaryAction = actions.count > 1
+    button.isEnabled = actions.count > 1
       
-      if actions.count > 1 {
-        var config = UIButton.Configuration.gray()
-        config.buttonSize = .small
-        config.cornerStyle = .dynamic
+    if actions.count > 1 {
+      var config = UIButton.Configuration.gray()
+      config.buttonSize = .small
+      config.cornerStyle = .dynamic
         
-        button.configuration = config
-      }
-      else {
-        // single action, disable tappable appearance
-        var config = UIButton.Configuration.plain()
-        config.buttonSize = .small
-        
-        button.configuration = config
-      }
+      button.configuration = config
     }
     else {
-      button.backgroundColor = .secondarySystemFill
+      // single action, disable tappable appearance
+      var config = UIButton.Configuration.plain()
+      config.buttonSize = .small
+        
+      button.configuration = config
     }
     
     return button

@@ -15,12 +15,14 @@ open class UIPredicateEditorLayout: UICollectionViewCompositionalLayout {
   ///
   /// Uses a list configuration and layout with the `.insetGrouped` style.
   /// - Returns: `UICollectionCompositionalLayout` with list style
-  open class func preparedLayout(trailingSwipeActionsConfigurationProvider: UICollectionLayoutListConfiguration.SwipeActionsConfigurationProvider? = nil) -> UICollectionViewCompositionalLayout {
+  open class func preparedLayout(trailingSwipeActionsConfigurationProvider: UICollectionLayoutListConfiguration.SwipeActionsConfigurationProvider? = nil, itemSeparatorHandler: UICollectionLayoutListConfiguration.ItemSeparatorHandler? = nil) -> UICollectionViewCompositionalLayout {
     var configuration = UICollectionLayoutListConfiguration(appearance: .insetGrouped)
     configuration.backgroundColor = .systemGroupedBackground
     configuration.showsSeparators = true
     configuration.footerMode = .supplementary
     configuration.trailingSwipeActionsConfigurationProvider = trailingSwipeActionsConfigurationProvider
+    
+    configuration.itemSeparatorHandler = itemSeparatorHandler
     
     return .list(using: configuration)
   }

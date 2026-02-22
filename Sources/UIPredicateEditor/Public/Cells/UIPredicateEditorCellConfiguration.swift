@@ -46,7 +46,7 @@ open class UIPredicateEditorCellConfiguration: UIContentConfiguration, Equatable
     
     let updatedConfig = self
     
-    // mutate the configuration here if necessary
+    // Mutate the configuration here if necessary
     updatedConfig.state = state
     
     return updatedConfig
@@ -60,18 +60,18 @@ open class UIPredicateEditorCellConfiguration: UIContentConfiguration, Equatable
 
 @available(iOS 14.0, *)
 open class UIPredicateEditorCellContentView: UIView, UIContentView {
-  /// horizontal padding between two items and the leading and trailing edges of the content view
+  /// Horizontal padding between two items and the leading and trailing edges of the content view
   var horizontalPadding: CGFloat { 8.0 }
   
-  /// vertical padding between two items
+  /// Vertical padding between two items
   var interItemVerticalPadding: CGFloat { 4.0 }
   
-  /// vertical padding between the content view and the items
+  /// Vertical padding between the content view and the items
   var verticalPadding: CGFloat { 8.0 }
   
   var indentationWidth: CGFloat { 12.0 }
   
-  /// the leading padding applied to views based on the indentation level of the configuration.
+  /// The leading padding applied to views based on the indentation level of the configuration.
   var leadingPadding: CGFloat {
     CGFloat((appliedConfiguration.indentationLevel + 1)) * indentationWidth
   }
@@ -102,13 +102,13 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
   open override func layoutSubviews() {
     super.layoutSubviews()
     
-    let cellBounds = bounds
+    let cellBounds = layoutMarginsGuide.layoutFrame
     
     if contentView == nil {
       constructView()
     }
     
-    // match width and height of self
+    // Match width and height of self
     contentView.frame = cellBounds
     
     // layout row template views
@@ -120,7 +120,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     frame = leftExpressionView?.frame ?? .zero
     frame.size = leftExpressionView?.intrinsicContentSize ?? .zero
     frame.origin.y = verticalPadding
-    frame.origin.x = leadingPadding
+    frame.origin.x = 0
     
     leftExpressionView?.frame = frame
     updateViewInteractionState(for: leftExpressionView)
@@ -129,7 +129,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     
     operatorView?.sizeToFit()
     
-    if (lineWidth + horizontalPadding + (operatorView?.intrinsicContentSize.width ?? 0)) > (cellBounds.width - (leadingPadding + horizontalPadding)) {
+    if (lineWidth + horizontalPadding + (operatorView?.intrinsicContentSize.width ?? 0)) > (cellBounds.width - (horizontalPadding)) {
       // move it to the next line
       var tempFrame = operatorView?.frame ?? .zero
       tempFrame.origin.y = frame.maxY + interItemVerticalPadding
@@ -142,7 +142,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     
     frame = operatorView?.frame ?? .zero
     frame.size = operatorView?.intrinsicContentSize ?? .zero
-    frame.origin.x = lineWidth > 0 ? (lineWidth + horizontalPadding) : leadingPadding
+    frame.origin.x = lineWidth > 0 ? (lineWidth + horizontalPadding) : 0
     
     if lineWidth != 0.0 {
       frame.origin.y = verticalPadding
@@ -157,9 +157,9 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
       var rightExpressionViewSize: CGSize = .zero
       
       if rightExpressionView is UITextField {
-        // occupy all available space
+        // Occupy all available space
         var tempFrame = rightExpressionView.frame
-        tempFrame.size.width = cellBounds.width - lineWidth - (horizontalPadding * 2.0) - leadingPadding
+        tempFrame.size.width = cellBounds.width - lineWidth - (horizontalPadding * 2.0)
         
         rightExpressionView.frame = tempFrame
         rightExpressionViewSize = tempFrame.size
@@ -169,8 +169,8 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
         rightExpressionViewSize = rightExpressionView.intrinsicContentSize
       }
       
-      // include leading and trailing padding 
-      if (lineWidth + (leadingPadding + horizontalPadding) + rightExpressionViewSize.width) > cellBounds.width {
+      // Include leading and trailing padding
+      if (lineWidth + (horizontalPadding) + rightExpressionViewSize.width) > cellBounds.width {
         // move it to the next line
         var tempFrame = rightExpressionView.frame
         tempFrame.origin.y = frame.maxY + interItemVerticalPadding
@@ -183,7 +183,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
       
       frame = rightExpressionView.frame
       frame.size = rightExpressionViewSize
-      frame.origin.x = lineWidth > 0 ? (lineWidth + horizontalPadding) : leadingPadding
+      frame.origin.x = lineWidth > 0 ? (lineWidth + horizontalPadding) : 0
       
       if lineWidth != 0.0 {
         frame.origin.y = verticalPadding
@@ -195,9 +195,8 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
       lineWidth = frame.maxX
     }
     
-    // if all views fit within the line
-    // center them vertically in the content view
-    if lines == 1, lineWidth <= (cellBounds.width - (leadingPadding + horizontalPadding)) {
+    // If all views fit within the line, center them vertically in the content view
+    if lines == 1, lineWidth <= (cellBounds.width - (horizontalPadding)) {
       for view: UIView? in [leftExpressionView, operatorView, rightExpressionView].compactMap ({ $0 }) {
         if let view = view {
           var frame = view.frame
@@ -271,6 +270,8 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     appliedConfiguration = configuration
     appliedConfiguration.rowTemplate?.refreshDelegate = self
     
+    layoutMargins = UIEdgeInsets(top: 0, left: leadingPadding, bottom: 0, right: 0)
+    
     // setup the view
     constructView()
   }
@@ -324,7 +325,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
   }
   
   /// Update the user interaction flag on the view/control based on the applied configuration.
-  /// - Parameter view: the view to update the interaction flag on. If it is an instance of ``UIControl``, its `isEnabled` property will be updated instead. 
+  /// - Parameter view: The view to update the interaction flag on. If it is an instance of ``UIControl``, its `isEnabled` property will be updated instead. 
   func updateViewInteractionState(for view: UIView?) {
     if let control = view as? UIControl {
       control.isEnabled = appliedConfiguration?.isEditable ?? true

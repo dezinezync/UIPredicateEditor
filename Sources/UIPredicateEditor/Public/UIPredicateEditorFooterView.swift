@@ -32,27 +32,14 @@ open class UIPredicateEditorFooterView: UICollectionReusableView {
     
     let title = NSLocalizedString("New", bundle: .module, comment: "New Row Button Title")
     
-    if #available(iOS 15.0, *) {
-      var configuration = UIButton.Configuration.tinted()
-      configuration.cornerStyle = .capsule
-      configuration.buttonSize = .medium
-      configuration.title = title
-      
-      button.configuration = configuration
-      button.automaticallyUpdatesConfiguration = true
-    }
-    else {
-      button.backgroundColor = tintColor
-      button.layer.cornerCurve = .continuous
-      button.layer.cornerRadius = 12.0
-      button.layer.masksToBounds = true
-      button.setTitleColor(.white, for: .normal)
-      button.setTitle(title, for: .normal)
-    }
+    var configuration = UIButton.Configuration.tinted()
+    configuration.cornerStyle = .capsule
+    configuration.buttonSize = .medium
+    configuration.title = title
     
-    if #available(iOS 14.0, *) {
-      button.showsMenuAsPrimaryAction = true
-    }
+    button.configuration = configuration
+    button.automaticallyUpdatesConfiguration = true
+    button.showsMenuAsPrimaryAction = true
     
     button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
     button.setContentHuggingPriority(.defaultHigh, for: .vertical)
