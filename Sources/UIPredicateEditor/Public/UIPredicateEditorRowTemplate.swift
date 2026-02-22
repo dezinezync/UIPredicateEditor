@@ -130,7 +130,7 @@ import CoreData
   #endif
   
   /// Initializes and returns a row template suitable for displaying compound predicates.
-  /// - Parameter compoundType: An array of NSNumber objects specifying compound predicate types. See NSCompoundPredicate.LogicalType for possible values.
+  /// - Parameter compoundType: An array of `NSCompoundPredicate.LogicalType` entities specifying compound predicate types. See ``NSCompoundPredicate.LogicalType`` for possible values.
   public init(compoundTypes: [NSCompoundPredicate.LogicalType]) {
     self.leftExpressions = []
     self.rightExpressions = []

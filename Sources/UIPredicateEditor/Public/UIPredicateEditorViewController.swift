@@ -267,7 +267,6 @@ open class UIPredicateEditorViewController: UICollectionViewController {
   
   // MARK: Footers
   open override func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
-    
     let footerView = collectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: UIPredicateEditorFooterView.identifier, for: indexPath) as! UIPredicateEditorFooterView
     
     // only the last section should have a footer
@@ -413,12 +412,11 @@ extension UIPredicateEditorViewController {
       // Allow adding a new combo row
     let comboAction = UIAction(
       title: NSLocalizedString("Combination", comment: "")) { [weak self] _ in
-#if DEBUG
+        #if DEBUG
         print("UIPredicateEditorViewController: footer menu: adding a new combination row")
-#endif
+        #endif
         guard let self else { return }
         
-        // @TODO: Add a new combo row with a child row
         let template = UIPredicateEditorRowTemplate(compoundTypes: [.and, .or, .not])
         template.ID = UUID()
         
