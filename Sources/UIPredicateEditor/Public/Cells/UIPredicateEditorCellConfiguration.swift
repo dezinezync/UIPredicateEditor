@@ -25,14 +25,17 @@ open class UIPredicateEditorCellConfiguration: UIContentConfiguration, Equatable
   
   weak var delegate: UIPredicateEditorContentRefreshing?
   
+  let rowMenuActionsProvider: (() -> [UIMenuElement])?
+  
   var indentationLevel: Int
   
-  init(rowTemplate: UIPredicateEditorRowTemplate, traitCollection: UITraitCollection, isEditable: Bool = true, indentationLevel: Int, delegate: (any UIPredicateEditorContentRefreshing)?) {
+  init(rowTemplate: UIPredicateEditorRowTemplate, traitCollection: UITraitCollection, isEditable: Bool = true, indentationLevel: Int, delegate: (any UIPredicateEditorContentRefreshing)?, rowMenuActionsProvider: (() -> [UIMenuElement])?) {
     self.rowTemplate = rowTemplate
     self.state = UICellConfigurationState(traitCollection: traitCollection)
     self.isEditable = isEditable
     self.indentationLevel = indentationLevel
     self.delegate = delegate
+    self.rowMenuActionsProvider = rowMenuActionsProvider
   }
   
   public func makeContentView() -> UIView & UIContentView {
@@ -122,7 +125,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     frame.origin.y = verticalPadding
     frame.origin.x = 0
     
-    leftExpressionView?.frame = frame
+    leftExpressionView?.frame = frame.integral
     updateViewInteractionState(for: leftExpressionView)
     
     lineWidth = frame.maxX
@@ -134,7 +137,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
       var tempFrame = operatorView?.frame ?? .zero
       tempFrame.origin.y = frame.maxY + interItemVerticalPadding
       
-      operatorView?.frame = tempFrame
+      operatorView?.frame = tempFrame.integral
       lineWidth = 0.0
       
       lines += 1
@@ -148,7 +151,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
       frame.origin.y = verticalPadding
     }
     
-    operatorView?.frame = frame
+    operatorView?.frame = frame.integral
     updateViewInteractionState(for: operatorView)
     
     lineWidth = frame.maxX
@@ -189,10 +192,19 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
         frame.origin.y = verticalPadding
       }
       
-      rightExpressionView.frame = frame
+      rightExpressionView.frame = frame.integral
       updateViewInteractionState(for: rightExpressionView)
       
       lineWidth = frame.maxX
+    }
+    else if let trailingButton {
+      let size: CGSize = trailingButton.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize)
+      
+      trailingButton.frame = CGRect(
+        origin: CGPoint(x: layoutMarginsGuide.layoutFrame.maxX - size.width - horizontalPadding, y: layoutMarginsGuide.layoutFrame.midY - (size.height * 0.5)),
+        size: size
+      ).integral
+      lineWidth = trailingButton.frame.maxX - horizontalPadding
     }
     
     // If all views fit within the line, center them vertically in the content view
@@ -245,6 +257,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
   internal weak var leftExpressionView: UIView!
   internal weak var operatorView: UIView!
   internal weak var rightExpressionView: UIView?
+  internal weak var trailingButton: UIButton?
   
   internal var additionalViews: [UIView] = []
   
@@ -272,7 +285,7 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     
     layoutMargins = UIEdgeInsets(top: 0, left: leadingPadding, bottom: 0, right: 0)
     
-    // setup the view
+    // Setup the view
     constructView()
   }
   
@@ -319,6 +332,24 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
       contentView.addSubview(rightExpressionView)
       
       self.rightExpressionView = rightExpressionView
+    }
+    else if rowViews.count == 2,
+            !rowTemplate.compoundTypes.isEmpty,
+            let rowMenuActionsProvider = appliedConfiguration.rowMenuActionsProvider {
+      // Compound (Combination) row, add a trailing button to this view to show a popup menu (+)
+      let button = UIButton(type: .system, primaryAction: nil)
+      var config = UIButton.Configuration.plain()
+      config.buttonSize = .small
+      config.image = UIImage(systemName: "plus.circle")
+      config.macIdiomStyle = .borderless
+      
+      button.configuration = config
+      button.showsMenuAsPrimaryAction = true
+      button.menu = UIMenu(children: rowMenuActionsProvider())
+      
+      contentView.addSubview(button)
+      
+      self.trailingButton = button
     }
     
     setNeedsLayout()

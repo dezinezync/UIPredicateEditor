@@ -234,7 +234,8 @@ open class UIPredicateEditorViewController: UICollectionViewController {
         traitCollection: cell.traitCollection,
         isEditable: self.isEditable,
         indentationLevel: 0,
-        delegate: self
+        delegate: self,
+        rowMenuActionsProvider: nil
       )
       
       cell.contentConfiguration = configuration
@@ -251,7 +252,8 @@ open class UIPredicateEditorViewController: UICollectionViewController {
         traitCollection: cell.traitCollection,
         isEditable: self.isEditable,
         indentationLevel: rowTemplate.indentationLevel,
-        delegate: self
+        delegate: self,
+        rowMenuActionsProvider: { self.newRowMenuActions(for: rowTemplate) }
       )
       
       configuration.delegate = cell
