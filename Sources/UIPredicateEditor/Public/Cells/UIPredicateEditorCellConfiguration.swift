@@ -28,6 +28,14 @@ open class UIPredicateEditorCellConfiguration: UIContentConfiguration, Equatable
   
   var indentationLevel: Int
   
+  /// Initialise a new instance of the receiver for configuring on a cell
+  /// - Parameters:
+  ///   - rowTemplate: the row template from ``PredicateController``
+  ///   - traitCollection: the trait collection from the owning view controller, or a customised trait collection for overriding the interface style.
+  ///   - isEditable: `true` if the fields in this row should be editable, `false` otherwise. **Default**: `true`
+  ///   - indentationLevel: the custom indentation level to apply to this row. Irrespective of the value provided here, the `rowTemplate.indentationLevel` is always checked first.
+  ///   - delegate: the content refreshing delegate which will be notified when the receiver's field or toggle values change
+  ///   - rowMenuActionsProvider: a menu actions provider speficially used for combination rows
   init(rowTemplate: UIPredicateEditorRowTemplate, traitCollection: UITraitCollection, isEditable: Bool = true, indentationLevel: Int, delegate: (any UIPredicateEditorContentRefreshing)?, rowMenuActionsProvider: (() -> [UIMenuElement])?) {
     self.rowTemplate = rowTemplate
     self.state = UICellConfigurationState(traitCollection: traitCollection)
