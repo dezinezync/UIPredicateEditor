@@ -18,26 +18,27 @@ import CoreData
 @MainActor open class UIPredicateEditorRowTemplate: NSObject {
   
   /// An array of ``NSExpression`` objects that represent the left side of a predicate.
-  public let leftExpressions: [NSExpression]
+  private(set) public var leftExpressions: [NSExpression]
   
   /// An array of ``NSExpression`` objects that represent the right side of a predicate.
-  public let rightExpressions: [NSExpression]
+  private(set) public var rightExpressions: [NSExpression]
   
   /// The attribute type for the right side of the predicate determining the custom view to show for the type.
-  public let rightExpressionAttributeType: NSAttributeType?
+  private(set) public var rightExpressionAttributeType: NSAttributeType?
   
   /// A modifier for the predicate (see ``NSComparisonPredicate.Modifier`` for possible values).
-  public let modifier: NSComparisonPredicate.Modifier
+  private(set) public var modifier: NSComparisonPredicate.Modifier
   
   /// An array of `NSComparisonPredicate.Operator` objects specifying the operator type (see ``NSComparisonPredicate.Operator`` for possible values).
-  public let operators: [NSComparisonPredicate.Operator]
+  private(set) public var operators: [NSComparisonPredicate.Operator]
   
   /// Options for the predicate (see ``NSComparisonPredicate.Options`` for possible values).
-  public let options: NSComparisonPredicate.Options
+  private(set) public var options: NSComparisonPredicate.Options
   
-  public let logicalType: NSCompoundPredicate.LogicalType
+  /// Logical type for the template's current state. Will always be ``NSCompoundPredicate.LogicalType.and`` for non-compound predicates configured on the receiver.
+  private(set) public var logicalType: NSCompoundPredicate.LogicalType
   
-  public let compoundTypes: [NSCompoundPredicate.LogicalType]
+  private(set) public var compoundTypes: [NSCompoundPredicate.LogicalType]
   
   /// delegate which is notified when the predicate or any of the view's value change.
   public weak var refreshDelegate: UIPredicateEditorContentRefreshing?
@@ -204,7 +205,7 @@ import CoreData
       score = min(1.0, score)
     }
     else if let compound = predicate as? NSCompoundPredicate {
-      // evaluate all subpredicates
+      // Evaluate all subpredicates
       let subpredicates = compound.subpredicates.compactMap { $0 as? NSPredicate }
       let incrementCounter = 1.0 / Double(subpredicates.count)
       
@@ -240,7 +241,7 @@ import CoreData
         views.append(operatorsPopupButton)
       }
       
-      if !rightExpressions.isEmpty {
+      if !rightExpressions.isEmpty { 
         views.append(rightExpressionPopupButton)
       }
       else {
@@ -275,6 +276,10 @@ import CoreData
   /// - Parameter predicate: The predicate value for the receiver.
   open func setPredicate(_ predicate: NSPredicate) {
     self.predicate = predicate
+    
+    if let compound = predicate as? NSCompoundPredicate {
+      logicalType = compound.compoundPredicateType
+    }
     
     refreshDelegate?.refreshContentView()
   }

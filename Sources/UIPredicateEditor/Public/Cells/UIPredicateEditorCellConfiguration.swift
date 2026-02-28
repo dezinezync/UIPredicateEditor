@@ -229,10 +229,14 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     rightExpressionView = nil
     trailingButton = nil
     
-    guard let rowTemplate = appliedConfiguration.rowTemplate else { return }
+    guard let rowTemplate = appliedConfiguration.rowTemplate else {
+      return
+    }
     
     let rowViews = rowTemplate.templateViews
-    guard rowViews.count >= 2 else { return }
+    guard rowViews.count >= 2 else {
+      return
+    }
     
     leftExpressionView = rowViews[0]
     operatorView = rowViews[1]
@@ -243,7 +247,8 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     if rowViews.count > 2 {
       rightExpressionView = rowViews[2]
       if let right = rightExpressionView { addSubview(right) }
-    } else if !rowTemplate.compoundTypes.isEmpty,
+    }
+    else if !rowTemplate.compoundTypes.isEmpty,
               let rowMenuActionsProvider = appliedConfiguration.rowMenuActionsProvider {
       // Compound (Combination) row, add a trailing button to this view to show a popup menu (+)
       let button = UIButton(type: .system)
@@ -266,7 +271,8 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
     let isEditable = appliedConfiguration?.isEditable ?? true
     if let control = view as? UIControl {
       control.isEnabled = isEditable
-    } else {
+    }
+    else {
       view?.isUserInteractionEnabled = isEditable
     }
   }

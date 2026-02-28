@@ -329,13 +329,12 @@ public final class PredicateController {
   
   private func rowTemplates(for predicate: NSPredicate, indentationLevel: Int = 0) -> [UIPredicateEditorRowTemplate] {
     if let compoundPredicate = predicate as? NSCompoundPredicate {
-      // for compound predicates, break down into sub-predicates
-      // with each subpredicate assigned to its own row-template
+      // For compound predicates, break down into sub-predicates with each subpredicate assigned to its own row-template
       // all "contained" by a single parent operator row-template.
       
       var templates: [UIPredicateEditorRowTemplate] = []
       
-      // Find the best matching template for the compound predicate itself (usually Any/All/None)
+      // Find the best matching template for the compound predicate (usually Any/All/None)
       guard let operatorTemplate: UIPredicateEditorRowTemplate = rowTemplates.reduce(nil, { partialResult, template in
         if template.match(for: predicate) > partialResult?.match(for: predicate) ?? 0 {
           return template
@@ -361,7 +360,7 @@ public final class PredicateController {
       compoundPredicate.subpredicates.forEach { subpredicate in
         let subTemplates = self.rowTemplates(for: subpredicate as! NSPredicate, indentationLevel: indentationLevel + 1)
         if !subTemplates.isEmpty {
-          // assign the parent's ID to all sub-template rows
+          // Assign the parent's ID to all sub-template rows
           subTemplates.forEach {
             $0.parentTemplateID = operatorTemplateCopy.ID
           }
