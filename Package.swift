@@ -8,19 +8,22 @@ let package = Package(
   defaultLocalization: "en",
   platforms: [
     .iOS(.v18),
-    .macCatalyst(.v18)
+    .macCatalyst(.v18),
   ],
   products: [
     .library(
       name: "UIPredicateEditor",
-      targets: ["UIPredicateEditor"]),
+      targets: ["UIPredicateEditor"],
+    ),
   ],
   targets: [
     .target(
       name: "UIPredicateEditor",
-      resources: [.process("Resources")]),
+      resources: [.process("Resources")],
+    ),
     .testTarget(
       name: "UIPredicateEditorTests",
-      dependencies: ["UIPredicateEditor"]),
-  ]
+      dependencies: ["UIPredicateEditor"],
+    ),
+  ],
 )
