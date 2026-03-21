@@ -8,10 +8,10 @@ The plan is to have a 1:1 API implementation so implementing it in cross-platfor
 
 ### TODO:
  
-- [ ] Missing implementations 
+- [x] Missing implementations 
 - [ ] Localizations 
 - [ ] Test Suites      
-- [ ] Additional Documentation (where missing)
+- [x] Additional Documentation (where missing)
 - [ ] Sample Project
 
 ### License
