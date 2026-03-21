@@ -170,8 +170,67 @@ import CoreData
   ///   - keyPaths: An array of attribute key paths originating at `entityDescription`. The key paths may cross relationships but must terminate in attributes.
   ///   - entityDescription: A Core Data entity description.
   /// - Returns: An array of predicate templates for keyPaths originating at `entityDescription`.
-  class func templates(withAttributeKeyPaths keyPaths: [String], in entityDescription: NSEntityDescription) -> [UIPredicateEditorRowTemplate] {
-    []
+  public class func templates(withAttributeKeyPaths keyPaths: [String], in entityDescription: NSEntityDescription) -> [UIPredicateEditorRowTemplate] {
+    var groups: [NSAttributeType: [String]] = [:]
+    
+    for keyPath in keyPaths {
+      if let attr = resolveAttributeDescription(for: keyPath, in: entityDescription) {
+        groups[attr.attributeType, default: []].append(keyPath)
+      }
+    }
+    
+    return groups.compactMap { (type, paths) in
+      let leftExpressions = paths.map { NSExpression(forKeyPath: $0) }
+      let operators = defaultOperators(for: type)
+      
+      let options: NSComparisonPredicate.Options = (type == .stringAttributeType) ? [.caseInsensitive, .diacriticInsensitive] : []
+      
+      return UIPredicateEditorRowTemplate(
+        leftExpressions: leftExpressions,
+        rightExpressionAttributeType: type,
+        modifier: .direct,
+        operators: operators,
+        options: options
+      )
+    }
+  }
+  
+  private static func resolveAttributeDescription(for keyPath: String, in entity: NSEntityDescription) -> NSAttributeDescription? {
+    let components = keyPath.components(separatedBy: ".")
+    var currentEntity = entity
+    
+    for (index, component) in components.enumerated() {
+      guard let property = currentEntity.propertiesByName[component] else {
+        return nil
+      }
+      
+      if index == components.count - 1 {
+        return property as? NSAttributeDescription
+      }
+      else if let relationship = property as? NSRelationshipDescription {
+        guard let dest = relationship.destinationEntity else { return nil }
+        currentEntity = dest
+      }
+      else {
+        // Attribute encountered in the middle of a key path, which is invalid for traversal
+        return nil
+      }
+    }
+    return nil
+  }
+  
+  private static func defaultOperators(for type: NSAttributeType) -> [NSComparisonPredicate.Operator] {
+    switch type {
+    case .stringAttributeType:
+      return [.equalTo, .notEqualTo, .contains, .beginsWith, .endsWith, .like, .matches]
+    case .integer16AttributeType, .integer32AttributeType, .integer64AttributeType,
+         .decimalAttributeType, .doubleAttributeType, .floatAttributeType, .dateAttributeType:
+      return [.equalTo, .notEqualTo, .lessThan, .lessThanOrEqualTo, .greaterThan, .greaterThanOrEqualTo]
+    case .booleanAttributeType:
+      return [.equalTo, .notEqualTo]
+    default:
+      return [.equalTo, .notEqualTo]
+    }
   }
   #endif
   
@@ -183,9 +242,11 @@ import CoreData
   ///
   /// The highest match among all the templates determines which template is responsible for displaying the predicate. You can override this to determine which predicates your custom template handles.
   open func match(for predicate: NSPredicate) -> Double {
-    var score: Double = 0.0
-    
     if let comparison = predicate as? NSComparisonPredicate {
+      if !compoundTypes.isEmpty { return 0.0 }
+      
+      var score: Double = 0.0
+      
       if operators.contains(comparison.predicateOperatorType) {
         score += 0.33
       }
@@ -194,7 +255,12 @@ import CoreData
         score += 0.33
       }
       
-      if rightExpressions.contains(comparison.rightExpression) {
+      // If rightExpressions is empty, we assume it's an attributeType match
+      if rightExpressions.isEmpty {
+        if rightExpressionAttributeType != nil {
+          score += 0.33
+        }
+      } else if rightExpressions.contains(comparison.rightExpression) {
         score += 0.33
       }
       
@@ -202,19 +268,16 @@ import CoreData
         score += 0.33
       }
       
-      score = min(1.0, score)
+      return min(1.0, score)
     }
     else if let compound = predicate as? NSCompoundPredicate {
-      // Evaluate all subpredicates
-      let subpredicates = compound.subpredicates.compactMap { $0 as? NSPredicate }
-      let incrementCounter = 1.0 / Double(subpredicates.count)
-      
-      for subpredicate in subpredicates {
-        score += match(for: subpredicate) >= 0.5 ? incrementCounter : 0.0
+      if compoundTypes.contains(compound.compoundPredicateType) {
+        return 1.0
       }
+      return 0.0
     }
     
-    return score
+    return 0.0
   }
   
   /// Returns the views that display this template’s predicate.
