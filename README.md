@@ -143,7 +143,7 @@ class MyFilterViewController: UIViewController {
 
 | | | |
 |:-------------------------:|:-------------------------:|:-------------------------:|
-|<img width="170" alt="Elytra" src="https://elytra.app/assets/images/home/appicon@2x.png"/>  | <img width="170" alt="Pockity" src="https://pockity.app/assets/images/home/appicon@2x.png"/> ||
+|<a href="https://elytra.app"><img width="170" alt="Elytra" src="https://elytra.app/assets/images/home/appicon@2x.png"/></a>  | <a href="https://pockity.app"><img width="170" alt="Pockity" src="https://pockity.app/assets/images/home/appicon@2x.png"/></a> ||
 | | | |
 
 ### License
