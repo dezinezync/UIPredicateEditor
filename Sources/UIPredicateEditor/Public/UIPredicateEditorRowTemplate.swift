@@ -291,7 +291,10 @@ import CoreData
   /// - Parameter predicate: a predicate object
   /// - Returns: The subpredicates that should be made sub-rows of predicate. For compound predicates (instances of `NSCompoundPredicate`), the array of subpredicates; for other types of predicate, returns `nil`. If a template represents a predicate in its entirety, or if the predicate has no subpredicates, returns `nil`.
   open func displayableSubpredicates(of predicate: NSPredicate) -> [NSPredicate]? {
-    []
+    if !compoundTypes.isEmpty, let compound = predicate as? NSCompoundPredicate {
+      return compound.subpredicates as? [NSPredicate]
+    }
+    return nil
   }
   
   /// Returns the predicate represented by the receiver’s views' values and the given sub-predicates.
@@ -303,7 +306,11 @@ import CoreData
   /// - Parameter subpredicates: An array of predicates.
   /// - Returns: The predicate represented by the values of the template's views and the given subpredicates. You can override this method to return the predicate represented by your custom views.
   open func predicate(withSubpredicates subpredicates: [NSPredicate]?) -> NSPredicate {
-    NSPredicate()
+    if !compoundTypes.isEmpty {
+      return NSCompoundPredicate(type: logicalTypeForCurrentState(), subpredicates: subpredicates ?? [])
+    }
+    
+    return predicateForCurrentState() ?? NSPredicate(value: false)
   }
   
   // MARK: - Internal

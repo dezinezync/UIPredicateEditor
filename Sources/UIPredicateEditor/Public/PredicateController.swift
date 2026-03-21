@@ -133,14 +133,7 @@ public final class PredicateController {
       return
     }
     
-    // We treat the top-level predicate as the root of our recursive structure.
-    // If it's a compound predicate, we build the tree.
-    // If it's a simple predicate, we wrap it or handle it as a single row.
-    
-    // The existing logic assumed subpredicates property existed on PredicateController
-    // which extracted subpredicates from self.predicate.
-    
-    // Let's rebuild the rows from scratch based on the current predicate.
+    // Rebuild the rows from scratch based on the current predicate.
     self.requiredRowTemplates = rowTemplates(for: predicate)
   }
   
@@ -303,78 +296,32 @@ public final class PredicateController {
   
   /// Recursively builds a predicate tree from the row templates.
   private func buildRecursivePredicate(from row: UIPredicateEditorRowTemplate) -> NSPredicate? {
-    // If it's a leaf node (comparison), return its predicate directly
-    if row.compoundTypes.isEmpty {
-      return row.predicateForCurrentState()
+    guard let rowID = row.ID else {
+      return row.predicate(withSubpredicates: nil)
     }
-    
-    // It's a compound node.
-    guard let rowID = row.ID else { return nil }
-    
-    let logicalType = row.logicalTypeForCurrentState()
     
     // Find direct children of this row
     let children = requiredRowTemplates.filter { $0.parentTemplateID == rowID }
     
-    var subpredicates: [NSPredicate] = []
+    if children.isEmpty {
+      return row.predicate(withSubpredicates: nil)
+    }
     
+    var subpredicates: [NSPredicate] = []
     for child in children {
       if let childPredicate = buildRecursivePredicate(from: child) {
         subpredicates.append(childPredicate)
       }
     }
     
-    return NSCompoundPredicate(type: logicalType, subpredicates: subpredicates)
+    return row.predicate(withSubpredicates: subpredicates)
   }
   
   private func rowTemplates(for predicate: NSPredicate, indentationLevel: Int = 0) -> [UIPredicateEditorRowTemplate] {
-    if let compoundPredicate = predicate as? NSCompoundPredicate {
-      // For compound predicates, break down into sub-predicates with each subpredicate assigned to its own row-template
-      // all "contained" by a single parent operator row-template.
-      
-      var templates: [UIPredicateEditorRowTemplate] = []
-      
-      // Find the best matching template for the compound predicate (usually Any/All/None)
-      guard let operatorTemplate: UIPredicateEditorRowTemplate = rowTemplates.reduce(nil, { partialResult, template in
-        if template.match(for: predicate) > partialResult?.match(for: predicate) ?? 0 {
-          return template
-        }
-        return partialResult
-      }) else {
-        return []
-      }
-      
-      let operatorTemplateCopy = operatorTemplate.copy() as! UIPredicateEditorRowTemplate
-      operatorTemplateCopy.ID = UUID()
-      
-      if indentationLevel > 0 {
-        operatorTemplateCopy.indentationLevel = indentationLevel - 1
-      }
-      
-      // Important: Update the view state (dropdown selection) to match the logical type
-      // This is implicit in setPredicate but ensuring consistency here.
-      operatorTemplateCopy.setPredicate(predicate)
-      
-      templates.append(operatorTemplateCopy)
-      
-      compoundPredicate.subpredicates.forEach { subpredicate in
-        let subTemplates = self.rowTemplates(for: subpredicate as! NSPredicate, indentationLevel: indentationLevel + 1)
-        if !subTemplates.isEmpty {
-          // Assign the parent's ID to all sub-template rows
-          subTemplates.forEach {
-            $0.parentTemplateID = operatorTemplateCopy.ID
-          }
-          
-          templates.append(contentsOf: subTemplates)
-        }
-      }
-      
-      return templates
-    }
-    
-    // Leaf node (Comparison)
-    guard let firstMatch: UIPredicateEditorRowTemplate = rowTemplates.reduce(nil, { partialResult, template in
-      if template.match(for: predicate) > partialResult?.match(for: predicate) ?? 0 {
+    // Find the best matching template for the current predicate
+    guard let bestMatch: UIPredicateEditorRowTemplate = rowTemplates.reduce(nil, { partialResult, template in
+      let score = template.match(for: predicate)
+      if score > partialResult?.match(for: predicate) ?? 0 {
         return template
       }
       return partialResult
@@ -382,16 +329,27 @@ public final class PredicateController {
       return []
     }
     
-    // create a copy of the template
-    let templateCopy = firstMatch.copy() as! UIPredicateEditorRowTemplate
-    
-    setFormattingDictionary(on: templateCopy, predicate: predicate)
-    
-    // update the predicate so it can internally update values on its views
-    templateCopy.setPredicate(predicate)
+    let templateCopy = bestMatch.copy() as! UIPredicateEditorRowTemplate
     templateCopy.indentationLevel = indentationLevel
     
-    return [templateCopy]
+    // Initialize the template with the predicate so its views are set up correctly
+    templateCopy.setPredicate(predicate)
+    setFormattingDictionary(on: templateCopy, predicate: predicate)
+    
+    var resultTemplates: [UIPredicateEditorRowTemplate] = [templateCopy]
+    
+    // Check if this template has subpredicates that should be displayed as sub-rows
+    if let subpredicates = templateCopy.displayableSubpredicates(of: predicate), !subpredicates.isEmpty {
+      templateCopy.ID = UUID() // Ensure it has an ID to act as a parent
+      
+      for subpredicate in subpredicates {
+        let subTemplates = rowTemplates(for: subpredicate, indentationLevel: indentationLevel + 1)
+        subTemplates.forEach { $0.parentTemplateID = templateCopy.ID }
+        resultTemplates.append(contentsOf: subTemplates)
+      }
+    }
+    
+    return resultTemplates
   }
 }
 #endif
