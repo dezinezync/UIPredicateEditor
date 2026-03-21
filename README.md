@@ -139,6 +139,13 @@ class MyFilterViewController: UIViewController {
 
 </details>
 
+### Apps Using UIPredicateEditor
+
+| | | |
+|:-------------------------:|:-------------------------:|:-------------------------:|
+|<img width="170" alt="Elytra" src="https://elytra.app/assets/images/home/appicon@2x.png"/>  | <img width="170" alt="Pockity" src="https://pockity.app/assets/images/home/appicon@2x.png"/> ||
+| | | |
+
 ### License
 MIT License, see the `LICENSE` file for more details. 
 
