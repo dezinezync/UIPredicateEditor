@@ -1,0 +1,42 @@
+name: Pull Request
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+  
+
+jobs:
+  iOS:
+    runs-on: macos-26
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+    - name: Build & Test
+      env:
+        SCHEME: UIPredicateEditor
+        DESTINATION: platform=iOS Simulator,arch=arm64,OS=26.2,name=iPhone 17 Pro
+      shell: bash
+      run: |
+        xcodebuild \
+        -scheme "$SCHEME" \
+        -destination "$DESTINATION" \
+        test \
+        | xcbeautify
+
+  MacCatalyst:
+    runs-on: macos-26
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+    - name: Build & Test
+      env:
+        SCHEME: UIPredicateEditor
+        DESTINATION: platform=macOS,arch=arm64,variant=Mac Catalyst,name=My Mac
+      shell: bash
+      run: |
+        xcodebuild \
+        -scheme "$SCHEME" \
+        -destination "$DESTINATION" \
+        test \
+        | xcbeautify
