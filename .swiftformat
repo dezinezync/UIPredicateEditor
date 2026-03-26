@@ -1,0 +1,12 @@
+# Compiler
+--languagemode 6
+--swiftversion 6.2
+
+# Options
+--ifdef no-indent
+--indent 2
+
+# Rules
+--disable blankLinesAtStartOfScope
+--disable wrapArguments
+--disable wrapPropertyBodies
