@@ -7,6 +7,14 @@ on:
   
 
 jobs:
+  Lint:
+    runs-on: macos-26
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Lint
+        run: swiftformat --lint . --reporter github-actions-log
+
   iOS:
     runs-on: macos-26
     steps:
