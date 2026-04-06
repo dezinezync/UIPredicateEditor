@@ -1,6 +1,6 @@
 //
 //  ComparisonPredicateOperator+Titles.swift
-//  
+//
 //
 //  Created by Nikhil Nigade on 31/05/22.
 //
@@ -20,12 +20,12 @@ extension NSCompoundPredicate.LogicalType {
       fatalError("unknown logical type")
     }
   }
-  
+
   var localizedTitle: String {
-    let title = self.title
+    let title = title
     return NSLocalizedString(title, bundle: .module, comment: title)
   }
-  
+
   var formattingTitle: String {
     switch self {
     case .and:
@@ -38,9 +38,9 @@ extension NSCompoundPredicate.LogicalType {
       fatalError("unknown logical type")
     }
   }
-  
+
   var localizedFormattingTitle: String {
-    let title = self.formattingTitle
+    let title = formattingTitle
     return NSLocalizedString(title, bundle: .module, comment: title)
   }
 }
@@ -80,23 +80,23 @@ extension NSComparisonPredicate.Operator {
       fatalError("Unknown operator")
     }
   }
-  
+
   var localizedTitle: String {
-    let title = self.title
+    let title = title
     return NSLocalizedString(title, bundle: .module, comment: title)
   }
-  
+
   static let allCases: [NSComparisonPredicate.Operator] = [
     .lessThan, .lessThanOrEqualTo, .greaterThan, .greaterThanOrEqualTo,
     .equalTo, .notEqualTo, .matches, .like, .beginsWith, .endsWith,
-    .in, .contains, .between
+    .in, .contains, .between,
   ]
-  
+
   static func from(_ localizedTitle: String) -> NSComparisonPredicate.Operator {
     if let match = allCases.first(where: { $0.localizedTitle == localizedTitle }) {
       return match
     }
-    
+
     fatalError("Unknown operator: \(localizedTitle)")
   }
 }

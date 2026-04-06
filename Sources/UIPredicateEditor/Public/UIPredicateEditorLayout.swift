@@ -1,6 +1,6 @@
 //
 //  UIPredicateEditorLayout.swift
-//  
+//
 //
 //  Created by Nikhil Nigade on 31/05/22.
 //
@@ -10,7 +10,7 @@ import UIKit
 
 @available(iOS 14, macCatalyst 14, *)
 open class UIPredicateEditorLayout: UICollectionViewCompositionalLayout {
-  
+
   /// Creates a prepared layout for using with the `UIPredicateEditor`.
   ///
   /// Uses a list configuration and layout with the `.insetGrouped` style.
@@ -21,9 +21,9 @@ open class UIPredicateEditorLayout: UICollectionViewCompositionalLayout {
     configuration.showsSeparators = true
     configuration.footerMode = .supplementary
     configuration.trailingSwipeActionsConfigurationProvider = trailingSwipeActionsConfigurationProvider
-    
+
     configuration.itemSeparatorHandler = itemSeparatorHandler
-    
+
     return .list(using: configuration)
   }
 }
