@@ -139,6 +139,10 @@ open class UIPredicateEditorCellContentView: UIView, UIContentView {
 
     for view in allViews {
       var size = view.intrinsicContentSize
+      if size.width == -1 {
+        view.sizeToFit()
+        size = view.bounds.size
+      }
 
       let currentLineIdx = lines.count - 1
       if view is UITextField {

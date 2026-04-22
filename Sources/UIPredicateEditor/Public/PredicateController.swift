@@ -150,7 +150,7 @@ public final class PredicateController {
 
     // We assume the first row is the root container if available.
     // If we have no rows, we have no predicate.
-    guard let rootRow = requiredRowTemplates.first else {
+    guard !requiredRowTemplates.isEmpty else {
       predicate = nil
       Task { @MainActor in
         notifyPredicateDidChange()
@@ -159,7 +159,11 @@ public final class PredicateController {
     }
 
     // Recursively rebuild the predicate starting from the root row.
-    predicate = buildRecursivePredicate(from: rootRow)
+    let predicates = requiredRowTemplates.compactMap {
+      buildRecursivePredicate(from: $0)
+    }
+
+    predicate = NSCompoundPredicate(type: self.rowTemplates[0].logicalType, subpredicates: predicates)
 
     Task { @MainActor in
       notifyPredicateDidChange()
@@ -279,7 +283,7 @@ public final class PredicateController {
 
   /// Helper to update the master predicate based on the current UI state of the root row (Any/All/None).
   public func updatePredicateFromCurrentState() {
-    guard let rootRow = requiredRowTemplates.first, !rootRow.compoundTypes.isEmpty else {
+    guard let rootRow = rowTemplates.first else {
       return
     }
     updatePredicate(for: rootRow.logicalTypeForCurrentState())

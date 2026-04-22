@@ -223,8 +223,10 @@ import CoreData
     case .stringAttributeType:
       [.equalTo, .notEqualTo, .contains, .beginsWith, .endsWith, .like, .matches]
     case .integer16AttributeType, .integer32AttributeType, .integer64AttributeType,
-         .decimalAttributeType, .doubleAttributeType, .floatAttributeType, .dateAttributeType:
+         .decimalAttributeType, .doubleAttributeType, .floatAttributeType:
       [.equalTo, .notEqualTo, .lessThan, .lessThanOrEqualTo, .greaterThan, .greaterThanOrEqualTo]
+    case .dateAttributeType:
+      [.greaterThan, .greaterThanOrEqualTo, .lessThan, .lessThanOrEqualTo]
     case .booleanAttributeType:
       [.equalTo, .notEqualTo]
     default:
@@ -753,8 +755,8 @@ import CoreData
 
   lazy var dateInputView: UIDatePicker = {
     let datePicker = UIDatePicker()
-    datePicker.datePickerMode = .dateAndTime
-    datePicker.preferredDatePickerStyle = .inline
+    datePicker.datePickerMode = .date
+    datePicker.preferredDatePickerStyle = .compact
 
     datePicker.addTarget(self, action: #selector(didChangeDate(_:)), for: .valueChanged)
 

@@ -381,8 +381,9 @@ extension UIPredicateEditorViewController {
   }
 
   private func addRowTemplate(for leftExpressionTitle: String, parentRowTemplate: UIPredicateEditorRowTemplate? = nil) {
-    if predicateController.addRowTemplate(for: leftExpressionTitle, for: parentRowTemplate) {
-      // collectionView.reloadData()
+    if predicateController.addRowTemplate(for: leftExpressionTitle, for: parentRowTemplate),
+       let logicalType = (parentRowTemplate ?? rowTemplates.first)?.logicalType {
+      predicateController.updatePredicate(for: logicalType)
     }
   }
 
