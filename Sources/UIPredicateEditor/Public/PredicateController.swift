@@ -153,7 +153,7 @@ public final class PredicateController {
 
     // We assume the first row is the root container if available.
     // If we have no rows, we have no predicate.
-    guard !requiredRowTemplates.isEmpty else {
+    guard !requiredRowTemplates.isEmpty, !rowTemplates.isEmpty else {
       predicate = nil
       notifyPredicateDidChange()
       return
