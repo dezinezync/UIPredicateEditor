@@ -13,22 +13,27 @@ public extension Notification.Name {
   /// Notified when the predicate of the `UIPredicateEditor`will change.
   ///
   /// The `object` on the `Notification` will be the editor.
+  @available(*, deprecated, message: "Utilize `PredicateControllerDelegate`")
   static let predicateWillChange = Notification.Name(rawValue: "UIPredicateEditor.predicateWillChange")
 
   /// Notified when the predicate of the `UIPredicateEditor` changes.
   ///
   /// The `object` on the `Notification` will be the editor.
+  @available(*, deprecated, message: "Utilize `PredicateControllerDelegate`")
   static let predicateDidChange = Notification.Name(rawValue: "UIPredicateEditor.predicateDidChange")
 }
 
 /// Concrete final class that manages predicates, row templates, updating and notifying of predicate changes to its managing view.
 ///
-/// The `UIPRedicateEditorViewController` class uses it internally for its predicate operations.
+/// The `UIPredicateEditorViewController` class uses it internally for its predicate operations.
 ///
 /// You may choose to write your own view and use the `PredicateController` as its driving model.
 @MainActor
 @Observable
 public final class PredicateController {
+  /// The delegate which will receive updates as the controller modified the `predicate`.
+  public var delegate: PredicateControllerDelegate?
+
   /// contains the predicate evaluated by the editor.
   ///
   /// If one or more parts cannot be queried from the row templates, the property evaluates to `nil`.
@@ -68,7 +73,7 @@ public final class PredicateController {
   /// Each row will have its own predicate which is used to form the predicate on the `UIPredicateEditor`.
   public var requiredRowTemplates: [UIPredicateEditorRowTemplate] = []
 
-  /// Created on-demand everytime as the formatting dictionary may change during runtime
+  /// Created on-demand every time as the formatting dictionary may change during runtime
   var formattingHelper: FormattingDictionaryHelper {
     FormattingDictionaryHelper(formattingDictionary: formattingDictionary ?? [:])
   }
@@ -144,17 +149,13 @@ public final class PredicateController {
   /// The receiver internally updates the derived predicate and notifies subscribers.
   /// - Parameter logicalType: logical type of the predicate.
   public func updatePredicate(for _: NSCompoundPredicate.LogicalType) {
-    Task { @MainActor in
-      notifyPredicateWillChange()
-    }
+    notifyPredicateWillChange()
 
     // We assume the first row is the root container if available.
     // If we have no rows, we have no predicate.
-    guard !requiredRowTemplates.isEmpty else {
+    guard !requiredRowTemplates.isEmpty, !rowTemplates.isEmpty else {
       predicate = nil
-      Task { @MainActor in
-        notifyPredicateDidChange()
-      }
+      notifyPredicateDidChange()
       return
     }
 
@@ -163,11 +164,8 @@ public final class PredicateController {
       buildRecursivePredicate(from: $0)
     }
 
-    predicate = NSCompoundPredicate(type: self.rowTemplates[0].logicalType, subpredicates: predicates)
-
-    Task { @MainActor in
-      notifyPredicateDidChange()
-    }
+    predicate = NSCompoundPredicate(type: rowTemplates[0].logicalType, subpredicates: predicates)
+    notifyPredicateDidChange()
   }
 
   /// Add a new row template on the receiver for the given LHS expression title.
@@ -291,13 +289,13 @@ public final class PredicateController {
 
   // MARK: Notify
 
-  @MainActor func notifyPredicateWillChange() {
-    // @TODO: Refactor to call delegate
+  func notifyPredicateWillChange() {
+    delegate?.predicateWillChangeForPredicateController(self)
     NotificationCenter.default.post(name: .predicateWillChange, object: self)
   }
 
-  @MainActor func notifyPredicateDidChange() {
-    // @TODO: Refactor to call delegate
+  func notifyPredicateDidChange() {
+    delegate?.predicateDidChangeForPredicateController(self)
     NotificationCenter.default.post(name: .predicateDidChange, object: self)
   }
 

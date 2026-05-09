@@ -14,7 +14,7 @@ import CoreData
 
 /// A template that describes available predicates and how to display them.
 ///
-/// By default, a noncompound row template has three views: a popup (or static text field) on the left, a popup or static text field for operators, and either a popup or other view on the right.  You can subclass `UIPredicateEditorRowTemplate` to create a row template with different numbers or types of views.
+/// By default, a non-compound row template has three views: a popup (or static text field) on the left, a popup or static text field for operators, and either a popup or other view on the right.  You can subclass `UIPredicateEditorRowTemplate` to create a row template with different numbers or types of views.
 @MainActor open class UIPredicateEditorRowTemplate: NSObject {
 
   /// An array of ``NSExpression`` objects that represent the left side of a predicate.
@@ -77,7 +77,7 @@ import CoreData
   /// For values greater than zero, the row should be indented in the presenting view. Values lower than 0 should be treated as 0.
   public var indentationLevel: Int = 0
 
-  /// wehn the row template is setup as a sub-predicate of a ``NSCompoundPredicate``, this ID will match the value of the parent template row.
+  /// when the row template is setup as a sub-predicate of a ``NSCompoundPredicate``, this ID will match the value of the parent template row.
   ///
   /// The ID will be common across all siblings. The parent will always point to an ``NSComparisonPredicate``.
   public var parentTemplateID: UUID?

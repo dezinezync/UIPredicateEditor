@@ -15,7 +15,7 @@ import UIKit
 
 /// Concrete view controller for managing and editing predicates in a user interface.
 ///
-/// It's `open` by default, encourgaging subclassing, but can be used as is.
+/// It's `open` by default, encouraging subclassing, but can be used as is.
 ///
 /// Similar to its `NSPredicateEditor` counterpart, it directly queries rows to be displayed based on its `objectValue`, an instance of `NSPredicate`, and matching rows from `rowTemplates`, and array of `UIPredicateEditorRowTemplate`.
 open class UIPredicateEditorViewController: UICollectionViewController {
@@ -79,7 +79,7 @@ open class UIPredicateEditorViewController: UICollectionViewController {
   /// set to `false` once the view appears and the initial predicate is setup.
   private var isLoading: Bool = true
 
-  /// this is created on-demand everytime as the formatting dictionary may change during runtime
+  /// this is created on-demand every time as the formatting dictionary may change during runtime
   var formattingHelper: FormattingDictionaryHelper {
     FormattingDictionaryHelper(formattingDictionary: formattingDictionary ?? [:])
   }
@@ -87,7 +87,7 @@ open class UIPredicateEditorViewController: UICollectionViewController {
   // MARK: Init
 
   public init(predicate: NSPredicate, rowTemplates: [UIPredicateEditorRowTemplate], layout: UICollectionViewLayout) {
-    assert(!rowTemplates.isEmpty, "Initialize the UIPredicateEditor with atleast one row template")
+    assert(!rowTemplates.isEmpty, "Initialize the UIPredicateEditor with at least one row template")
 
     let compoundTypeRow = rowTemplates.first(where: { !$0.compoundTypes.isEmpty })
 
@@ -382,7 +382,8 @@ extension UIPredicateEditorViewController {
 
   private func addRowTemplate(for leftExpressionTitle: String, parentRowTemplate: UIPredicateEditorRowTemplate? = nil) {
     if predicateController.addRowTemplate(for: leftExpressionTitle, for: parentRowTemplate),
-       let logicalType = (parentRowTemplate ?? rowTemplates.first)?.logicalType {
+       let logicalType = (parentRowTemplate ?? rowTemplates.first)?.logicalType
+    {
       predicateController.updatePredicate(for: logicalType)
     }
   }

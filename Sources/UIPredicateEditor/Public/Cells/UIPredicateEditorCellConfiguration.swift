@@ -35,7 +35,7 @@ open class UIPredicateEditorCellConfiguration: UIContentConfiguration, Equatable
   ///   - isEditable: `true` if the fields in this row should be editable, `false` otherwise. **Default**: `true`
   ///   - indentationLevel: the custom indentation level to apply to this row. Irrespective of the value provided here, the `rowTemplate.indentationLevel` is always checked first.
   ///   - delegate: the content refreshing delegate which will be notified when the receiver's field or toggle values change
-  ///   - rowMenuActionsProvider: a menu actions provider speficially used for combination rows
+  ///   - rowMenuActionsProvider: a menu actions provider specifically used for combination rows
   init(rowTemplate: UIPredicateEditorRowTemplate, traitCollection: UITraitCollection, isEditable: Bool = true, indentationLevel: Int, delegate: (any UIPredicateEditorContentRefreshing)?, rowMenuActionsProvider: (() -> [UIMenuElement])?) {
     self.rowTemplate = rowTemplate
     state = UICellConfigurationState(traitCollection: traitCollection)
